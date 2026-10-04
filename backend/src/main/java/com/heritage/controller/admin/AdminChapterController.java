@@ -1,10 +1,12 @@
 package com.heritage.controller.admin;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.heritage.common.Result;
 import com.heritage.common.ResultCode;
 import com.heritage.entity.CourseChapter;
 import com.heritage.exception.BusinessException;
 import com.heritage.service.CourseChapterService;
+import com.heritage.service.StudyProgressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +29,8 @@ import java.util.List;
 public class AdminChapterController {
 
     private final CourseChapterService courseChapterService;
+
+    private final StudyProgressService studyProgressService;
 
     /**
      * 查询课程下的章节列表（按 sort 升序）
@@ -64,10 +68,12 @@ public class AdminChapterController {
     }
 
     /**
-     * 删除章节（章节为课程从属数据，物理删除；关联学习进度记录保留，前台组装时自动跳过）
+     * 删除章节（章节为课程从属数据，物理删除；同时清理该章节的学习进度，避免产生孤儿进度数据）
      */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        studyProgressService.remove(Wrappers.<com.heritage.entity.StudyProgress>lambdaQuery()
+                .eq(com.heritage.entity.StudyProgress::getChapterId, id));
         courseChapterService.removeById(id);
         return Result.ok();
     }

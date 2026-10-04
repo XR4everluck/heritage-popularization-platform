@@ -23,11 +23,19 @@ const commentContent = ref('')
 const posting = ref(false)
 const collected = ref(false)
 const collecting = ref(false)
+const notFound = ref(false)
 
 const levelTagType = computed(() => (info.value?.level === '国家级' ? 'danger' : 'warning'))
 
 onMounted(async () => {
-  const detailRes = await getHeritageDetail(route.params.id)
+  let detailRes
+  try {
+    detailRes = await getHeritageDetail(route.params.id)
+  } catch (e) {
+    // 项目不存在/已删除/未发布：展示友好空状态
+    notFound.value = true
+    return
+  }
   info.value = detailRes.data
   // 浏览量自增（不阻塞页面）
   addHeritageView(route.params.id).catch(() => {})
@@ -94,7 +102,14 @@ async function submitComment() {
 </script>
 
 <template>
-  <div v-if="info" class="detail-page">
+  <!-- 项目不存在/已被删除时的友好空状态 -->
+  <el-card v-if="notFound" shadow="never" class="notfound-card">
+    <el-empty description="该项目不存在或已被删除">
+      <el-button type="danger" @click="router.push('/heritage')">去逛逛其他非遗项目</el-button>
+    </el-empty>
+  </el-card>
+
+  <div v-else-if="info" class="detail-page">
     <!-- 头部信息卡 -->
     <el-card shadow="never" class="head-card">
       <div class="head-body">
@@ -170,6 +185,13 @@ async function submitComment() {
 </template>
 
 <style scoped>
+.notfound-card {
+  margin-bottom: 16px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .head-card {
   margin-bottom: 16px;
 }

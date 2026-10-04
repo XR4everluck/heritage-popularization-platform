@@ -10,6 +10,7 @@ import com.heritage.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,6 +54,15 @@ public class FrontCourseController {
             throw new BusinessException(ResultCode.NOT_FOUND);
         }
         return Result.ok(course);
+    }
+
+    /**
+     * 课程浏览量自增（进入课程学习页时由前端调用一次）
+     */
+    @PostMapping("/{id}/view")
+    public Result<Void> view(@PathVariable Long id) {
+        courseService.increaseViewCount(id);
+        return Result.ok();
     }
 
     /**

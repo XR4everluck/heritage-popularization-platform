@@ -34,6 +34,16 @@ async function showNotice(notice) {
   noticeDetail.value = res.data
   noticeVisible.value = true
 }
+
+/** 轮播图点击跳转：站内路由用 router，外链新窗口打开 */
+function goBanner(banner) {
+  if (!banner.linkUrl) return
+  if (/^https?:\/\//i.test(banner.linkUrl)) {
+    window.open(banner.linkUrl, '_blank')
+  } else {
+    router.push(banner.linkUrl)
+  }
+}
 </script>
 
 <template>
@@ -43,7 +53,7 @@ async function showNotice(notice) {
       <el-carousel-item v-for="banner in banners" :key="banner.id">
         <img :src="banner.image" class="banner-img"
              @error="coverFallback($event, banner.title || '非遗之美')"
-             @click="banner.linkUrl && router.push(banner.linkUrl)" />
+             @click="goBanner(banner)" />
         <div class="banner-title">{{ banner.title }}</div>
       </el-carousel-item>
     </el-carousel>

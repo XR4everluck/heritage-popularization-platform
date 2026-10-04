@@ -5,15 +5,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getCourseDetail, getCourseChapters, getMyProgress, updateProgress } from '../../api/front'
+import { getCourseDetail, getCourseChapters, getMyProgress, updateProgress, addCourseView } from '../../api/front'
 import { useUserStore } from '../../store/user'
-import { defaultCover } from '../../utils/placeholder'
+import { defaultCover, coverFallback } from '../../utils/placeholder'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const course = ref(null)
+const notFound = ref(false)
 const chapters = ref([])
 const currentChapter = ref(null)
 const myProgress = ref([])
@@ -29,11 +30,18 @@ const progressOfChapter = computed(() => {
 })
 
 onMounted(async () => {
-  const [courseRes, chapterRes] = await Promise.all([
-    getCourseDetail(route.params.id),
-    getCourseChapters(route.params.id)
-  ])
+  let courseRes
+  try {
+    courseRes = await getCourseDetail(route.params.id)
+  } catch (e) {
+    // 课程不存在/已删除：notFound 置位，页面展示友好空状态
+    notFound.value = true
+    return
+  }
   course.value = courseRes.data
+  // 浏览量自增（不阻塞页面）
+  addCourseView(route.params.id).catch(() => {})
+  const chapterRes = await getCourseChapters(route.params.id)
   chapters.value = chapterRes.data
   if (chapters.value.length) {
     selectChapter(chapters.value[0])
@@ -85,7 +93,14 @@ function onVideoEnded() {
 </script>
 
 <template>
-  <div v-if="course" class="course-page">
+  <!-- 课程不存在/已被删除时的友好空状态 -->
+  <el-card v-if="notFound" shadow="never" class="notfound-card">
+    <el-empty description="课程不存在或已被删除">
+      <el-button type="danger" @click="router.push('/heritage')">去逛逛非遗项目</el-button>
+    </el-empty>
+  </el-card>
+
+  <div v-else-if="course" class="course-page">
     <el-button text @click="router.back()"><el-icon><ArrowLeft /></el-icon> 返回</el-button>
 
     <!-- 课程信息 -->
@@ -155,6 +170,13 @@ function onVideoEnded() {
   object-fit: cover;
   border-radius: 8px;
   flex-shrink: 0;
+}
+.notfound-card {
+  margin: 10px 0;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .head-info h2 {
   margin-bottom: 10px;

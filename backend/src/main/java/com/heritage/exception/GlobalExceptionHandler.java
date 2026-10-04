@@ -3,11 +3,15 @@ package com.heritage.exception;
 import com.heritage.common.Result;
 import com.heritage.common.ResultCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import javax.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
@@ -65,6 +69,34 @@ public class GlobalExceptionHandler {
     public Result<Void> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
         log.warn("上传文件过大：{}", e.getMessage());
         return Result.error("上传文件过大（图片最大10MB，视频最大500MB）");
+    }
+
+    /** 缺少必需的请求参数 */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public Result<Void> handleMissingParameter(MissingServletRequestParameterException e) {
+        log.warn("缺少请求参数：{}", e.getParameterName());
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), "缺少必需的参数：" + e.getParameterName());
+    }
+
+    /** 缺少上传文件表单项 */
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public Result<Void> handleMissingPart(MissingServletRequestPartException e) {
+        log.warn("缺少上传表单项：{}", e.getRequestPartName());
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), "缺少上传的文件表单项：" + e.getRequestPartName());
+    }
+
+    /** 路径/参数类型不匹配（如 /api/heritage/abc） */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public Result<Void> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.warn("参数类型错误：{}", e.getName());
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), "参数类型错误：" + e.getName());
+    }
+
+    /** 请求体 JSON 格式错误或不可读 */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Result<Void> handleMessageNotReadable(HttpMessageNotReadableException e) {
+        log.warn("请求体格式错误：{}", e.getMessage());
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), "请求体格式错误，请检查 JSON 数据");
     }
 
     /** 兜底异常：记录完整日志，对外返回通用提示 */

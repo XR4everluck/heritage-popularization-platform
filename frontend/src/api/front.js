@@ -29,6 +29,10 @@ export function getCourseChapters(id) {
   return request.get(`/api/course/${id}/chapters`)
 }
 
+export function addCourseView(id) {
+  return request.post(`/api/course/${id}/view`)
+}
+
 export function getBanners() {
   return request.get('/api/portal/banners')
 }

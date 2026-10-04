@@ -107,7 +107,10 @@ async function saveProfile() {
         <div v-for="item in comments" :key="item.id" class="comment-row">
           <div class="comment-main">
             <div class="comment-text">{{ item.content }}</div>
-            <div class="comment-meta">评论于《{{ item.heritageName }}》 · {{ item.createTime }}</div>
+            <div class="comment-meta">
+              评论于《{{ item.heritageName }}》 · {{ item.createTime }}
+              <el-tag v-if="item.status === 0" size="small" type="info" style="margin-left: 6px">已被管理员屏蔽</el-tag>
+            </div>
           </div>
           <el-button size="small" type="danger" plain @click="removeComment(item)">删除</el-button>
         </div>

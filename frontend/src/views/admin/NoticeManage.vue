@@ -47,7 +47,12 @@ async function save() {
   await formRef.value.validate()
   saving.value = true
   try {
-    form.id ? await noticeApi.update({ ...form }) : await noticeApi.add({ ...form })
+    const payload = { ...form }
+    // 人性化兜底：发布状态下未填发布时间时自动取当前时间，避免"已发布却前台不可见"
+    if (payload.status === 1 && !payload.publishTime) {
+      payload.publishTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+    }
+    payload.id ? await noticeApi.update(payload) : await noticeApi.add(payload)
     ElMessage.success('保存成功')
     dialogVisible.value = false
     loadData()

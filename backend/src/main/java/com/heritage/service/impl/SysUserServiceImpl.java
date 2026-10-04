@@ -35,7 +35,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         user.setNickname(StrUtil.isBlank(dto.getNickname()) ? dto.getUsername() : dto.getNickname());
         user.setRole(ROLE_USER);
         user.setStatus(1);
-        this.save(user);
+        try {
+            this.save(user);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 并发注册同名用户时由 username 唯一索引兜底，转换为友好提示
+            throw new BusinessException("用户名已被注册，请更换用户名");
+        }
     }
 
     @Override

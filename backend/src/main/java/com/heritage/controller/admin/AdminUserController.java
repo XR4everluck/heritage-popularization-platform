@@ -4,7 +4,9 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.heritage.common.Result;
+import com.heritage.common.ResultCode;
 import com.heritage.entity.SysUser;
+import com.heritage.exception.BusinessException;
 import com.heritage.service.SysUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,13 +50,20 @@ public class AdminUserController {
     }
 
     /**
-     * 启用/禁用用户账号（禁用后该用户无法登录）
+     * 启用/禁用用户账号（禁用后该用户无法登录；管理员账号不允许被禁用，防止后台失去管理入口）
      *
      * @param id     用户ID
      * @param status 目标状态：1-启用，0-禁用
      */
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+        SysUser target = sysUserService.getById(id);
+        if (target == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND);
+        }
+        if ("admin".equals(target.getRole()) && status != null && status == 0) {
+            throw new BusinessException("管理员账号不允许被禁用");
+        }
         SysUser update = new SysUser();
         update.setId(id);
         update.setStatus(status);

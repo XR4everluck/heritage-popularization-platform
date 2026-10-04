@@ -54,8 +54,9 @@ public class UserCollectionServiceImpl extends ServiceImpl<UserCollectionMapper,
         }
         // 收藏记录无保留价值，物理删除
         this.removeById(record.getId());
+        // GREATEST 兜底：数据不一致导致计数为0时不再减成负数
         heritageInfoService.lambdaUpdate().eq(HeritageInfo::getId, heritageId)
-                .setSql("collection_count = collection_count - 1").update();
+                .setSql("collection_count = GREATEST(collection_count - 1, 0)").update();
     }
 
     @Override
