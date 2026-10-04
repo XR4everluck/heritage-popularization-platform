@@ -1,0 +1,32 @@
+# ===== Java / Maven（阶段2后端使用）=====
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ===== Node / Vue（阶段4前端使用）=====
+node_modules/
+dist/
+*.local
+npm-debug.log*
+yarn-error.log*
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json
+
+# ===== 操作系统 =====
+.DS_Store
+Thumbs.db
+
+# ===== 日志 =====
+logs/
+*.log
+
+# ===== 本地敏感配置 =====
+application-local.yml
+
+# ===== 插件工作目录 =====
+.mimosa/
