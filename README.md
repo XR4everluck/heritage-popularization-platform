@@ -20,7 +20,9 @@ heritage-teaching-platform
 └── frontend/   # Vue3 前端（阶段4创建，前台+后台同工程）
 ```
 
-## 快速开始（当前阶段：数据库初始化）
+## 快速开始
+
+### 1. 初始化数据库
 
 1. 安装 MySQL 8.0 并启动服务；
 2. 执行建表脚本：
@@ -29,6 +31,12 @@ heritage-teaching-platform
    ```
    （或在 Navicat 等工具中直接运行 `sql/heritage_teaching_platform.sql`）
 3. 脚本自动创建数据库 `heritage_teaching`、10 张表及演示数据。
+
+### 2. 启动后端（阶段2已就绪）
+
+1. 修改 `backend/src/main/resources/application.yml` 中的数据库账号密码（`TODO` 注释处）；
+2. 启动：`cd backend && mvn spring-boot:run`（或 IDEA 直接运行 `HeritageApplication`）；
+3. 自检：访问 [http://localhost:8080/api/hello](http://localhost:8080/api/hello) 返回 `{"code":200,...}` 即成功，`/api/hello/db` 验证数据库连通。
 
 **初始化账号（密码均为 `123456`）**
 
@@ -40,8 +48,8 @@ heritage-teaching-platform
 ## 阶段计划与进度
 
 - [x] **阶段1：系统需求分析与数据库设计** —— 建表 SQL、ER 图文字说明、表作用说明、设计规范（`docs/01-需求分析与数据库设计.md`）
-- [ ] 阶段2：后端基础框架搭建 —— SpringBoot 2.7.18 + MyBatis-Plus 3.5.3.1 工程初始化、统一返回结果、全局异常处理、跨域配置、JWT 登录鉴权、BCrypt 密码
-- [ ] 阶段3：后端业务模块开发 —— 分类/非遗项目/课程章节/收藏/评论/学习进度/轮播图/公告/用户管理接口 + 文件上传
+- [x] **阶段2：后端基础框架搭建** —— SpringBoot 2.7.18 + MyBatis-Plus 3.5.3.1 骨架、pom 依赖、application.yml、Result 统一返回、全局异常处理、跨域配置、分页与逻辑删除配置（`docs/02-后端项目骨架说明.md`）
+- [ ] 阶段3：后端业务模块开发 —— 实体/Mapper/Service/Controller（分类/非遗项目/课程章节/收藏/评论/学习进度/轮播图/公告/用户管理）+ JWT 登录鉴权 + 文件上传
 - [ ] 阶段4：用户前台开发 —— Vue3 + Element Plus（首页、非遗列表与详情、课程学习、个人中心）
 - [ ] 阶段5：管理后台开发 —— 布局与各管理模块页面
 - [ ] 阶段6：前后端联调、功能测试、打包部署与论文素材整理
