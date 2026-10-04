@@ -50,9 +50,9 @@ heritage-teaching-platform
 - [x] **阶段1：系统需求分析与数据库设计** —— 建表 SQL、ER 图文字说明、表作用说明、设计规范（`docs/01-需求分析与数据库设计.md`）
 - [x] **阶段2：后端基础框架搭建** —— SpringBoot 2.7.18 + MyBatis-Plus 3.5.3.1 骨架、pom 依赖、application.yml、Result 统一返回、全局异常处理、跨域配置、分页与逻辑删除配置（`docs/02-后端项目骨架说明.md`）
 - [x] **阶段3：实体层 + 数据层 + 业务层** —— 10 张表的 Entity（@TableName/@TableId/@TableField/@TableLogic）、Mapper（BaseMapper）、Service（IService）/ServiceImpl（40 个类，纯 MP 内置方法，无 XML；`docs/03-实体层与业务层说明.md`）
-- [ ] 阶段4：后端业务接口层 —— Controller、DTO/VO、JWT 登录鉴权、文件上传、业务组装（收藏/评论/学习进度联动）
+- [x] **阶段4：后端业务接口层** —— 前台 8 个 + 后台 8 个 Controller（完整 REST 接口）、DTO/VO 分层、BCrypt 注册登录、收藏/进度/评论跨表业务组装（`docs/04-接口层说明.md`；暂未接入 JWT，用户身份调试期由 userId 参数传入）
 - [ ] 阶段5：用户前台开发 —— Vue3 + Element Plus（首页、非遗列表与详情、课程学习、个人中心）
 - [ ] 阶段6：管理后台开发 —— 布局与各管理模块页面
-- [ ] 阶段7：前后端联调、功能测试、打包部署与论文素材整理
+- [ ] 阶段7：JWT 鉴权接入、前后端联调、功能测试、打包部署与论文素材整理
 
 > 执行原则：严格按阶段顺序执行，每完成一个阶段本地运行验证无误后进入下一阶段，并保存一次 git 提交。

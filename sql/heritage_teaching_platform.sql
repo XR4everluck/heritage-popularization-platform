@@ -224,8 +224,8 @@ CREATE TABLE `notice` (
 
 -- 1. 用户（密码均为 123456 的 BCrypt 密文）
 INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `phone`, `email`, `role`, `introduction`) VALUES
-(1, 'admin', '$2b$10$mzAq8eSHR308mTQFa1CA8OA76LSJ8lvtGTSQzLGYHzQKohCHYMPq.', '系统管理员', '13800000000', 'admin@heritage.com', 'admin', '非遗知识教学平台系统管理员'),
-(2, 'user1', '$2b$10$mzAq8eSHR308mTQFa1CA8OA76LSJ8lvtGTSQzLGYHzQKohCHYMPq.', '非遗爱好者', '13900000000', 'user1@heritage.com', 'user', '热爱传统文化，正在学习非遗知识');
+(1, 'admin', '$2a$10$mzAq8eSHR308mTQFa1CA8OA76LSJ8lvtGTSQzLGYHzQKohCHYMPq.', '系统管理员', '13800000000', 'admin@heritage.com', 'admin', '非遗知识教学平台系统管理员'),
+(2, 'user1', '$2a$10$mzAq8eSHR308mTQFa1CA8OA76LSJ8lvtGTSQzLGYHzQKohCHYMPq.', '非遗爱好者', '13900000000', 'user1@heritage.com', 'user', '热爱传统文化，正在学习非遗知识');
 
 -- 2. 非遗分类
 INSERT INTO `heritage_category` (`id`, `name`, `description`, `icon`, `sort`) VALUES
