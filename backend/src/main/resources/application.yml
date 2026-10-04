@@ -23,11 +23,11 @@ spring:
       idle-timeout: 600000
       max-lifetime: 1800000
 
-  # ---------- 文件上传限制（阶段3文件上传使用） ----------
+  # ---------- 文件上传限制（课程章节视频较大，放宽到500MB） ----------
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 500MB
+      max-request-size: 520MB
 
   # ---------- JSON序列化：统一时间格式 ----------
   jackson:
@@ -36,7 +36,7 @@ spring:
 
 # ---------- MyBatis-Plus ----------
 mybatis-plus:
-  # Mapper XML 文件位置（阶段3业务开发时使用）
+  # Mapper XML 文件位置（复杂 SQL 时使用）
   mapper-locations: classpath*:/mapper/**/*.xml
   configuration:
     # 数据库下划线字段自动映射 Java 驼峰属性（create_time -> createTime）
@@ -52,3 +52,15 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+# ---------- 平台自定义配置 ----------
+heritage:
+  jwt:
+    # JWT 签名密钥：从环境变量 HERITAGE_JWT_SECRET 读取（至少32字节），
+    # 不要把真实密钥提交到代码仓库；未配置时后端自动使用随机密钥（重启后登录态失效，仅限开发调试）
+    secret: ${HERITAGE_JWT_SECRET:}
+    # token 有效期（小时）
+    expire-hours: 24
+  upload:
+    # 上传文件存储目录（相对后端运行目录），经 /files/** 静态映射对外访问
+    path: ./files

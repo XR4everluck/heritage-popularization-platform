@@ -22,6 +22,7 @@
         <mybatis-plus.version>3.5.3.1</mybatis-plus.version>
         <hutool.version>5.8.27</hutool.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
+        <jjwt.version>0.11.5</jjwt.version>
         <!-- 覆盖SpringBoot默认Lombok版本：1.18.48 在保持 JDK 8 兼容的同时支持新版 JDK 编译 -->
         <lombok.version>1.18.48</lombok.version>
     </properties>
@@ -67,6 +68,25 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
+        </dependency>
+
+        <!-- JWT 认证（jjwt 三件套：api 编译期、impl/jackson 运行期） -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- 文件上传 -->
