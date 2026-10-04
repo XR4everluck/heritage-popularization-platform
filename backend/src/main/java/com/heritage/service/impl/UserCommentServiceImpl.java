@@ -53,14 +53,24 @@ public class UserCommentServiceImpl extends ServiceImpl<UserCommentMapper, UserC
         qw.eq(heritageId != null, UserComment::getHeritageId, heritageId)
                 .eq(status != null, UserComment::getStatus, status)
                 .orderByDesc(UserComment::getCreateTime);
-        Page<UserComment> result = this.page(page, qw);
+        return assembleVOPage(this.page(page, qw));
+    }
+
+    @Override
+    public Page<CommentVO> pageMy(Page<UserComment> page, Long userId) {
+        LambdaQueryWrapper<UserComment> qw = new LambdaQueryWrapper<>();
+        qw.eq(UserComment::getUserId, userId).orderByDesc(UserComment::getCreateTime);
+        return assembleVOPage(this.page(page, qw));
+    }
+
+    /** 将评论分页结果组装为 VO 分页（批量查询评论人与非遗信息，避免逐条查询） */
+    private Page<CommentVO> assembleVOPage(Page<UserComment> result) {
         Page<CommentVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
         List<UserComment> records = result.getRecords();
         if (records.isEmpty()) {
             voPage.setRecords(new ArrayList<>());
             return voPage;
         }
-        // 批量查询评论人与非遗信息，避免逐条查询
         Map<Long, SysUser> users = sysUserService.listByIds(
                         records.stream().map(UserComment::getUserId).distinct().collect(Collectors.toList()))
                 .stream().collect(Collectors.toMap(SysUser::getId, u -> u));

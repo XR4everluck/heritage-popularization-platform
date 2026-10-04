@@ -55,6 +55,19 @@ public class FrontCommentController {
     }
 
     /**
+     * 分页查询"我的评论"（个人中心使用；用户ID取自 token）
+     *
+     * @param page     页码，默认 1
+     * @param pageSize 每页条数，默认 10
+     */
+    @GetMapping("/my")
+    public Result<Page<CommentVO>> my(@RequestParam(defaultValue = "1") Integer page,
+                                      @RequestParam(defaultValue = "10") Integer pageSize,
+                                      HttpServletRequest request) {
+        return Result.ok(userCommentService.pageMy(new Page<>(page, pageSize), AuthContext.getUserId(request)));
+    }
+
+    /**
      * 删除自己的评论（非本人评论返回 403 语义错误，逻辑删除；用户ID取自 token）
      *
      * @param id 评论ID

@@ -1,0 +1,30 @@
+/* 全局基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  background-color: #f5f7fa;
+  color: #303133;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* 富文本内容展示（非遗详情/公告内容） */
+.rich-content p {
+  line-height: 1.8;
+  margin: 8px 0;
+}
+
+.rich-content img {
+  max-width: 100%;
+}

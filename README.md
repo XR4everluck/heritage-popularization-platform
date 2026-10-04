@@ -52,8 +52,7 @@ heritage-teaching-platform
 - [x] **阶段3：实体层 + 数据层 + 业务层** —— 10 张表的 Entity（@TableName/@TableId/@TableField/@TableLogic）、Mapper（BaseMapper）、Service（IService）/ServiceImpl（40 个类，纯 MP 内置方法，无 XML；`docs/03-实体层与业务层说明.md`）
 - [x] **阶段4：后端业务接口层** —— 前台 8 个 + 后台 8 个 Controller（完整 REST 接口）、DTO/VO 分层、BCrypt 注册登录、收藏/进度/评论跨表业务组装（`docs/04-接口层说明.md`）
 - [x] **阶段5：毕设增强功能（JWT 认证 + 文件上传）** —— jjwt 签发/校验、登录返回 token、拦截器保护接口（白名单放行公开接口）、admin 角色权限、图片/视频本地上传与静态映射（`docs/05-JWT认证与文件上传说明.md`）
-- [ ] 阶段6：用户前台开发 —— Vue3 + Element Plus（首页、非遗列表与详情、课程学习、个人中心）
-- [ ] 阶段7：管理后台开发 —— 布局与各管理模块页面
-- [ ] 阶段8：前后端联调、功能测试、打包部署与论文素材整理
+- [x] **阶段6：Vue3 前端（前台 + 后台）** —— Vue3 + Vite + Element Plus + Pinia + axios 封装，前台 6 页 + 后台 10 页，路由守卫、富文本、图片/视频上传、浏览器 E2E 验证（`docs/06-前端项目说明.md`）
+- [ ] 阶段7：前后端联调打磨、功能测试、打包部署与论文素材整理
 
 > 执行原则：严格按阶段顺序执行，每完成一个阶段本地运行验证无误后进入下一阶段，并保存一次 git 提交。

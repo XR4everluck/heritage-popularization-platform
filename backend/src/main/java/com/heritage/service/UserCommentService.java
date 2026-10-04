@@ -28,4 +28,9 @@ public interface UserCommentService extends IService<UserComment> {
      * 删除本人评论：校验归属，逻辑删除
      */
     void deleteOwn(Long userId, Long commentId);
+
+    /**
+     * 分页查询"我的评论"并组装评论人/非遗信息（个人中心使用）
+     */
+    Page<CommentVO> pageMy(Page<UserComment> page, Long userId);
 }

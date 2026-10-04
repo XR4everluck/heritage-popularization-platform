@@ -46,6 +46,11 @@ public class JwtInterceptor implements HandlerInterceptor {
     public boolean preHandle(@NonNull HttpServletRequest request,
                              @NonNull HttpServletResponse response,
                              @NonNull Object handler) throws Exception {
+        // 放行 CORS 预检请求（携带 Authorization 头的跨域请求会先发 OPTIONS 探测，
+        // 预检请求不携带业务头，必须放行，否则浏览器报 Network Error）
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         String auth = request.getHeader("Authorization");
         if (auth == null || !auth.startsWith("Bearer ")) {
             return reject(response, ResultCode.UNAUTHORIZED, "未登录或缺少令牌，请先登录");
