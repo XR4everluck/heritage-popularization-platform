@@ -22,7 +22,16 @@ heritage-teaching-platform
 
 ## 快速开始
 
-### 1. 初始化数据库
+### ★ 一键启动（推荐）
+
+双击项目根目录的 **`一键启动.bat`**：
+- 首次运行会要求输入一次 MySQL 密码（可选择记住，保存在本地 `.db_secret`，已被 git 忽略）；
+- 自动检查数据库、缺库时自动导入建表脚本、自动打包后端、启动前后端并打开浏览器；
+- 停止系统：运行 `一键启动.bat stop`。
+
+### 手动启动
+
+#### 1. 初始化数据库
 
 1. 安装 MySQL 8.0 并启动服务；
 2. 执行建表脚本：
@@ -32,11 +41,17 @@ heritage-teaching-platform
    （或在 Navicat 等工具中直接运行 `sql/heritage_teaching_platform.sql`）
 3. 脚本自动创建数据库 `heritage_teaching`、10 张表及演示数据。
 
-### 2. 启动后端（阶段2已就绪）
+#### 2. 启动后端（阶段2已就绪）
 
 1. 修改 `backend/src/main/resources/application.yml` 中的数据库账号密码（`TODO` 注释处）；
 2. 启动：`cd backend && mvn spring-boot:run`（或 IDEA 直接运行 `HeritageApplication`）；
 3. 自检：访问 [http://localhost:8080/api/hello](http://localhost:8080/api/hello) 返回 `{"code":200,...}` 即成功，`/api/hello/db` 验证数据库连通。
+
+#### 3. 启动前端
+
+1. `cd frontend && npm install`（首次）；
+2. `npm run dev`；
+3. 访问 [http://localhost:5173](http://localhost:5173)。
 
 **初始化账号（密码均为 `123456`）**
 

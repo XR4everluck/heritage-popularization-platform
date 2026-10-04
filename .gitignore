@@ -27,6 +27,8 @@ logs/
 
 # ===== 本地敏感配置 =====
 application-local.yml
+.db_secret
+.jwt_secret
 
 # ===== 插件工作目录 =====
 .mimosa/
