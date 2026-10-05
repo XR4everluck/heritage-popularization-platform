@@ -39,7 +39,12 @@ heritage-teaching-platform
    mysql -uroot -p --default-character-set=utf8mb4 < sql\heritage_teaching_platform.sql
    ```
    （或在 Navicat 等工具中直接运行 `sql/heritage_teaching_platform.sql`）
-3. 脚本自动创建数据库 `heritage_teaching`、10 张表及演示数据。
+3. （推荐）执行种子数据扩充脚本，获得 33 个非遗项目、10 门课程（37 个章节均配真实科普视频）、轮播图与公告等完整演示数据：
+   ```
+   mysql -uroot -p --default-character-set=utf8mb4 < sql\seed_expansion.sql
+   ```
+   扩充脚本可重复执行（自带幂等守卫），不修改表结构；
+4. 建表脚本自动创建数据库 `heritage_teaching`、10 张表及基础演示数据。
 
 #### 2. 启动后端（阶段2已就绪）
 
@@ -63,6 +68,7 @@ heritage-teaching-platform
 ## 阶段计划与进度
 
 - [x] **阶段1：系统需求分析与数据库设计** —— 建表 SQL、ER 图文字说明、表作用说明、设计规范（`docs/01-需求分析与数据库设计.md`）
+- [x] **阶段1-1：种子数据批量扩充** —— 新增 29 个非遗项目（共 33 个，覆盖国家级/省级/市级与六大分类，详细内容均 200 字以上）、8 门课程 32 个新章节（全部 37 个章节配真实可播放的B站科普视频）、封面图与轮播图均使用已验证的真实外链，另扩充用户/评论/收藏/学习进度/公告演示数据（`sql/seed_expansion.sql`，可重复执行）
 - [x] **阶段2：后端基础框架搭建** —— SpringBoot 2.7.18 + MyBatis-Plus 3.5.3.1 骨架、pom 依赖、application.yml、Result 统一返回、全局异常处理、跨域配置、分页与逻辑删除配置（`docs/02-后端项目骨架说明.md`）
 - [x] **阶段3：实体层 + 数据层 + 业务层** —— 10 张表的 Entity（@TableName/@TableId/@TableField/@TableLogic）、Mapper（BaseMapper）、Service（IService）/ServiceImpl（40 个类，纯 MP 内置方法，无 XML；`docs/03-实体层与业务层说明.md`）
 - [x] **阶段4：后端业务接口层** —— 前台 8 个 + 后台 8 个 Controller（完整 REST 接口）、DTO/VO 分层、BCrypt 注册登录、收藏/进度/评论跨表业务组装（`docs/04-接口层说明.md`）

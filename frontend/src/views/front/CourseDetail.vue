@@ -23,6 +23,16 @@ const myProgress = ref([])
 const videoRef = ref()
 const playedSeconds = ref(0)
 
+// B站外链视频（种子数据使用的外链形式）：转成官方播放器嵌入地址
+const isBili = computed(() => /bilibili\.com|b23\.tv/.test(currentChapter.value?.videoUrl || ''))
+const biliEmbed = computed(() => {
+  const url = currentChapter.value?.videoUrl || ''
+  const bv = url.match(/BV[0-9A-Za-z]+/)
+  if (!bv) return ''
+  const page = url.match(/[?&]p=(\d+)/)
+  return `https://player.bilibili.com/player.html?bvid=${bv[0]}&page=${page ? page[1] : 1}&autoplay=0&danmaku=0&high_quality=1`
+})
+
 const progressOfChapter = computed(() => {
   const map = {}
   myProgress.value.forEach((p) => (map[p.chapterId] = p))
@@ -124,7 +134,11 @@ function onVideoEnded() {
       <!-- 视频播放区 -->
       <el-card shadow="never" class="player-card">
         <template #header><b>正在学习：{{ currentChapter?.title || '暂无章节' }}</b></template>
-        <video v-if="currentChapter?.videoUrl" ref="videoRef" :key="currentChapter.id"
+        <!-- B站外链视频：使用官方播放器内嵌播放 -->
+        <iframe v-if="currentChapter?.videoUrl && isBili" :key="'bili-' + currentChapter.id"
+                :src="biliEmbed" scrolling="no" frameborder="0" allowfullscreen
+                class="player bili-player"></iframe>
+        <video v-else-if="currentChapter?.videoUrl" ref="videoRef" :key="currentChapter.id"
                :src="currentChapter.videoUrl" controls autoplay class="player"
                @timeupdate="onTimeUpdate" @ended="onVideoEnded" />
         <div v-else class="player-placeholder">
@@ -205,6 +219,12 @@ function onVideoEnded() {
   max-height: 460px;
   border-radius: 8px;
   background: #000;
+}
+/* B站内嵌播放器保持 16:9 */
+.bili-player {
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
 }
 .player-placeholder {
   height: 300px;
