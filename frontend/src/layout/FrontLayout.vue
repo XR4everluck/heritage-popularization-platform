@@ -1,8 +1,9 @@
 <script setup>
 /**
  * 前台布局：顶部导航栏（logo、菜单、用户区）+ 主内容区 + 页脚
+ * 小屏（<=768px）时水平菜单自动折叠为抽屉导航
  */
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
 
@@ -10,6 +11,13 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const activeMenu = computed(() => router.currentRoute.value.path)
+const drawerOpen = ref(false)
+
+/** 抽屉菜单跳转并关闭抽屉 */
+function go(path) {
+  drawerOpen.value = false
+  router.push(path)
+}
 </script>
 
 <template>
@@ -26,6 +34,19 @@ const activeMenu = computed(() => router.currentRoute.value.path)
           <el-menu-item index="/heritage">非遗博览</el-menu-item>
           <el-menu-item v-if="userStore.isLogin" index="/profile">个人中心</el-menu-item>
         </el-menu>
+        <!-- 小屏折叠菜单按钮（<=768px 显示） -->
+        <button class="nav-burger" @click="drawerOpen = true">
+          <el-icon :size="22"><Fold /></el-icon>
+        </button>
+        <!-- 折叠抽屉导航 -->
+        <el-drawer v-model="drawerOpen" title="导航菜单" size="240px" class="nav-drawer">
+          <div class="drawer-menu">
+            <div class="drawer-item" :class="{ active: activeMenu === '/' }" @click="go('/')">首页</div>
+            <div class="drawer-item" :class="{ active: activeMenu === '/heritage' }" @click="go('/heritage')">非遗博览</div>
+            <div v-if="userStore.isLogin" class="drawer-item" :class="{ active: activeMenu === '/profile' }" @click="go('/profile')">个人中心</div>
+            <div v-if="userStore.isAdmin" class="drawer-item" @click="go('/admin/dashboard')">进入后台</div>
+          </div>
+        </el-drawer>
         <div class="user-area">
           <template v-if="userStore.isLogin">
             <el-dropdown>
@@ -96,6 +117,50 @@ const activeMenu = computed(() => router.currentRoute.value.path)
 .nav-menu {
   flex: 1;
   border-bottom: none;
+}
+/* 小屏折叠：隐藏水平菜单，显示汉堡按钮 */
+.nav-burger {
+  display: none;
+  border: none;
+  background: transparent;
+  color: var(--gq-text);
+  cursor: pointer;
+  padding: 6px;
+}
+.drawer-menu {
+  display: flex;
+  flex-direction: column;
+}
+.drawer-item {
+  padding: 14px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.2s;
+}
+.drawer-item:hover {
+  background: #fdf6ec;
+}
+.drawer-item.active {
+  color: var(--gq-primary);
+  font-weight: 700;
+  background: var(--gq-primary-light-9);
+}
+@media (max-width: 768px) {
+  .nav-menu {
+    display: none;
+  }
+  .nav-burger {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+  .user-area {
+    margin-left: 8px;
+  }
+  .logo-text {
+    font-size: 16px;
+  }
 }
 .user-area {
   display: flex;

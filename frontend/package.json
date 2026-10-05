@@ -12,6 +12,8 @@
     "@element-plus/icons-vue": "^2.3.1",
     "@wangeditor/editor": "^5.1.23",
     "@wangeditor/editor-for-vue": "^5.1.12",
+    "artplayer": "^5.4.0",
+    "artplayer-plugin-danmuku": "^5.3.0",
     "axios": "^1.8.4",
     "element-plus": "^2.9.7",
     "pinia": "^2.3.1",

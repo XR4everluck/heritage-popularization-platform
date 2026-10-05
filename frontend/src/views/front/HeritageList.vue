@@ -14,6 +14,8 @@ const categories = ref([])
 const list = ref([])
 const total = ref(0)
 const loading = ref(false)
+// 首屏骨架屏：仅在首次加载时展示
+const firstLoading = ref(true)
 const query = ref({
   categoryId: route.query.categoryId ? Number(route.query.categoryId) : null,
   level: null,
@@ -49,7 +51,17 @@ async function loadData() {
     total.value = Number(res.data.total)
   } finally {
     loading.value = false
+    firstLoading.value = false
   }
+}
+
+/** 清空筛选条件并重新查询（空结果引导） */
+function resetFilters() {
+  query.value.categoryId = null
+  query.value.level = null
+  query.value.keyword = ''
+  query.value.page = 1
+  loadData()
 }
 
 function search() {
@@ -59,7 +71,26 @@ function search() {
 </script>
 
 <template>
-  <div class="list-page" v-loading="loading">
+  <div class="list-page">
+    <!-- 骨架屏（首次加载） -->
+    <el-row :gutter="16" v-if="firstLoading">
+      <el-col v-for="i in 8" :key="i" :xs="12" :sm="12" :md="8" :lg="6">
+        <el-card shadow="never" :body-style="{ padding: 0 }" class="sk-card">
+          <el-skeleton animated :loading="true">
+            <template #template>
+              <el-skeleton-item variant="image" style="width: 100%; height: 160px" />
+              <div style="padding: 12px">
+                <el-skeleton-item variant="text" style="width: 60%" />
+                <el-skeleton-item variant="text" style="width: 40%; margin-top: 8px" />
+                <el-skeleton-item variant="text" style="width: 80%; margin-top: 8px" />
+              </div>
+            </template>
+          </el-skeleton>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <template v-else>
     <!-- 筛选区 -->
     <el-card shadow="never" class="filter-card">
       <div class="filter-row">
@@ -77,10 +108,13 @@ function search() {
       </div>
     </el-card>
 
-    <!-- 卡片列表（统一卡片风格） -->
-    <el-empty v-if="!list.length && !loading" description="暂无相关非遗项目" />
-    <el-row :gutter="16" class="card-list">
-      <el-col v-for="item in list" :key="item.id" :span="6">
+    <!-- 卡片列表（统一卡片风格，移动端 2 列） -->
+    <el-empty v-if="!list.length && !loading" description="没有找到相关非遗项目，换个关键词试试？">
+      <el-button type="danger" @click="resetFilters">清空筛选条件</el-button>
+      <el-button @click="router.push('/')">回首页逛逛</el-button>
+    </el-empty>
+    <el-row v-loading="loading" :gutter="16" class="card-list">
+      <el-col v-for="item in list" :key="item.id" :xs="12" :sm="12" :md="8" :lg="6">
         <HeritageCard :item="item" @open="router.push(`/heritage/${item.id}`)" />
       </el-col>
     </el-row>
@@ -90,6 +124,7 @@ function search() {
       <el-pagination v-model:current-page="query.page" :page-size="query.pageSize" :total="total"
                      layout="prev, pager, next, total" background @current-change="loadData" />
     </div>
+    </template>
   </div>
 </template>
 
@@ -106,6 +141,10 @@ function search() {
 }
 .card-list .el-col {
   margin-bottom: 16px;
+}
+.sk-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
 }
 .pager {
   display: flex;

@@ -7,14 +7,15 @@ import { useRouter } from 'vue-router'
 import { getBanners, getCategoryList, getHeritagePage, getNoticePage, getNoticeDetail,
          getHotCourses, getLatestProgress, getRecommend } from '../../api/front'
 import { useUserStore } from '../../store/user'
-import { coverFallback } from '../../utils/placeholder'
 import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
 import CateIcon from '../../components/CateIcon.vue'
+import BannerCarousel from '../../components/BannerCarousel.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
+const loading = ref(true)
 const banners = ref([])
 const categories = ref([])
 const hotCourses = ref([])
@@ -45,6 +46,7 @@ onMounted(async () => {
   heritageList.value = h.data.records
   recommendList.value = recommend.data
   notices.value = n.data.records
+  loading.value = false
   loadLatest()
 })
 
@@ -86,15 +88,24 @@ function goBanner(banner) {
 
 <template>
   <div class="home">
-    <!-- 轮播图 -->
-    <el-carousel height="360px" class="banner" :interval="4000">
-      <el-carousel-item v-for="banner in banners" :key="banner.id">
-        <img :src="banner.image" class="banner-img"
-             @error="coverFallback($event, banner.title || '非遗之美')"
-             @click="goBanner(banner)" />
-        <div class="banner-title">{{ banner.title }}</div>
-      </el-carousel-item>
-    </el-carousel>
+    <!-- 骨架屏（首屏数据加载中） -->
+    <div v-if="loading" class="home-skeleton">
+      <el-skeleton animated style="width: 100%">
+        <template #template>
+          <el-skeleton-item variant="image" style="width: 100%; height: 380px; border-radius: 12px" />
+          <div style="display: flex; gap: 16px; margin-top: 24px">
+            <el-skeleton-item v-for="i in 4" :key="i" variant="image" style="flex: 1; height: 220px; border-radius: 12px" />
+          </div>
+          <div style="display: flex; gap: 16px; margin-top: 24px">
+            <el-skeleton-item v-for="i in 4" :key="'b' + i" variant="image" style="flex: 1; height: 220px; border-radius: 12px" />
+          </div>
+        </template>
+      </el-skeleton>
+    </div>
+
+    <template v-else>
+    <!-- 国风淡入淡出轮播图 -->
+    <BannerCarousel :banners="banners" :open="goBanner" />
 
     <!-- 搜索框 + 热门搜索 -->
     <div class="search-section">
@@ -149,7 +160,7 @@ function goBanner(banner) {
           <el-link type="danger" @click="router.push('/heritage')">更多 &gt;</el-link>
         </div>
         <el-row :gutter="16">
-          <el-col v-for="item in heritageList" :key="item.id" :span="6">
+          <el-col v-for="item in heritageList" :key="item.id" :xs="12" :sm="12" :md="8" :lg="6">
             <HeritageCard :item="item" class="grid-card"
                           @open="router.push(`/heritage/${item.id}`)" />
           </el-col>
@@ -176,7 +187,7 @@ function goBanner(banner) {
         <h3 class="section-title">精品课程</h3>
       </div>
       <el-row :gutter="16">
-        <el-col v-for="course in hotCourses" :key="course.id" :span="6">
+        <el-col v-for="course in hotCourses" :key="course.id" :xs="12" :sm="12" :md="8" :lg="6">
           <CourseCard :item="course" class="grid-card" @open="router.push(`/course/${course.id}`)" />
         </el-col>
       </el-row>
@@ -186,11 +197,12 @@ function goBanner(banner) {
     <div class="section" v-if="recommendList.length">
       <h3 class="section-title">猜你喜欢</h3>
       <el-row :gutter="16">
-        <el-col v-for="item in recommendList" :key="item.id" :span="6">
+        <el-col v-for="item in recommendList" :key="item.id" :xs="12" :sm="12" :md="8" :lg="6">
           <HeritageCard :item="item" class="grid-card" @open="router.push(`/heritage/${item.id}`)" />
         </el-col>
       </el-row>
     </div>
+    </template>
 
     <!-- 公告详情弹窗 -->
     <el-dialog v-model="noticeVisible" :title="noticeDetail?.title" width="560px">
@@ -200,25 +212,6 @@ function goBanner(banner) {
 </template>
 
 <style scoped>
-.banner {
-  border-radius: 8px;
-  overflow: hidden;
-}
-.banner-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  cursor: pointer;
-}
-.banner-title {
-  position: absolute;
-  left: 24px;
-  bottom: 18px;
-  color: #fff;
-  font-size: 22px;
-  font-weight: 600;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-}
 .section {
   margin-top: 24px;
 }

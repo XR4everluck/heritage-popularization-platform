@@ -1,12 +1,12 @@
 <script setup>
 /**
- * 个人中心：我的收藏 / 我的评论 / 我的学习 / 个人资料（Tab 切换）
+ * 个人中心：学习数据仪表板 + 我的收藏 / 我的评论 / 我的学习 / 个人资料（Tab 切换）
  */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyCollections, removeCollection, getMyComments, deleteMyComment,
-         getMyProgress } from '../../api/front'
+         getMyProgress, getCourseChapters } from '../../api/front'
 import { getProfile, updateProfile } from '../../api/user'
 import { useUserStore } from '../../store/user'
 import FileUpload from '../../components/FileUpload.vue'
@@ -24,6 +24,8 @@ const commentTotal = ref(0)
 const commentPage = ref(1)
 // 我的学习
 const progressList = ref([])
+// 各课程总章节数：{ [课程id]: 章节数 }，用于计算完成度
+const courseTotals = ref({})
 // 个人资料
 const profileForm = ref({ nickname: '', phone: '', email: '', avatar: '', introduction: '' })
 const saving = ref(false)
@@ -49,7 +51,63 @@ async function loadComments() {
 async function loadProgress() {
   const res = await getMyProgress({})
   progressList.value = res.data
+  // 并发拉取涉及课程的总章节数（失败按 0 处理）
+  const ids = [...new Set(res.data.map((p) => p.courseId))]
+  const results = await Promise.all(ids.map((id) =>
+    getCourseChapters(id).then((r) => [id, r.data.length]).catch(() => [id, 0])
+  ))
+  courseTotals.value = Object.fromEntries(results)
 }
+
+// ---------- 学习数据仪表板 ----------
+const studyStats = computed(() => {
+  const list = progressList.value
+  const totalMinutes = list.reduce((sum, p) => sum + (p.studyDuration || 0), 0)
+  const finishedChapters = list.filter((p) => p.finished).length
+  return { totalMinutes, finishedChapters, streakDays: calcStreak(list) }
+})
+
+/** 连续学习天数：从今天（或昨天）往前数，学习日期连续的天数 */
+function calcStreak(list) {
+  const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const dates = [...new Set(list.map((p) => (p.updateTime || '').slice(0, 10)))].sort()
+  if (!dates.length) return 0
+  const days = new Set(dates)
+  let streak = 0
+  const cursor = new Date()
+  // 今天没学不打断连续（从昨天起算）
+  if (!days.has(fmt(cursor))) cursor.setDate(cursor.getDate() - 1)
+  while (days.has(fmt(cursor))) {
+    streak += 1
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return streak
+}
+
+/** 分钟数格式化为"X 小时 Y 分钟" */
+function formatMinutes(minutes) {
+  if (!minutes) return '0 分钟'
+  if (minutes < 60) return `${minutes} 分钟`
+  return `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分钟`
+}
+
+/** 课程完成度百分比 */
+function coursePercent(courseId) {
+  const total = courseTotals.value[courseId] || 0
+  if (!total) return 0
+  const finished = progressList.value.filter((p) => p.courseId === courseId && p.finished).length
+  return Math.round((finished / total) * 100)
+}
+
+/** 按课程聚合的学习记录（我的学习列表展示） */
+const courseStudy = computed(() => {
+  const map = new Map()
+  progressList.value.forEach((p) => {
+    if (!map.has(p.courseId)) map.set(p.courseId, { courseId: p.courseId, courseName: p.courseName, records: [] })
+    map.get(p.courseId).records.push(p)
+  })
+  return [...map.values()]
+})
 
 async function loadProfile() {
   const res = await getProfile()
@@ -86,11 +144,29 @@ async function saveProfile() {
 </script>
 
 <template>
+  <!-- 学习数据仪表板 -->
+  <div class="stat-row">
+    <el-card shadow="never" class="stat-card">
+      <div class="stat-num" :style="{ color: 'var(--gq-primary)' }">{{ formatMinutes(studyStats.totalMinutes) }}</div>
+      <div class="stat-label"><el-icon><Timer /></el-icon> 累计学习时长</div>
+    </el-card>
+    <el-card shadow="never" class="stat-card">
+      <div class="stat-num" :style="{ color: 'var(--gq-gold)' }">{{ studyStats.finishedChapters }}</div>
+      <div class="stat-label"><el-icon><CircleCheck /></el-icon> 完成章节数</div>
+    </el-card>
+    <el-card shadow="never" class="stat-card">
+      <div class="stat-num" :style="{ color: 'var(--gq-secondary)' }">{{ studyStats.streakDays }} 天</div>
+      <div class="stat-label"><el-icon><Sunny /></el-icon> 连续学习天数</div>
+    </el-card>
+  </div>
+
   <el-card shadow="never" class="profile-card">
     <el-tabs v-model="activeTab">
       <!-- 我的收藏 -->
       <el-tab-pane label="我的收藏" name="collection">
-        <el-empty v-if="!collections.length" description="还没有收藏，去非遗博览看看吧" />
+        <el-empty v-if="!collections.length" description="还没有收藏任何非遗项目">
+          <el-button type="danger" @click="router.push('/heritage')">去非遗博览逛逛</el-button>
+        </el-empty>
         <div v-for="item in collections" :key="item.id" class="collect-item" @click="router.push(`/heritage/${item.heritageId}`)">
           <img :src="item.coverImage || defaultCover(item.name, 200, 140)" class="collect-cover" />
           <div class="collect-info">
@@ -103,7 +179,9 @@ async function saveProfile() {
 
       <!-- 我的评论 -->
       <el-tab-pane label="我的评论" name="comment">
-        <el-empty v-if="!comments.length" description="暂无评论" />
+        <el-empty v-if="!comments.length" description="还没有发表过评论，去项目详情页说说你的看法吧">
+          <el-button type="danger" @click="router.push('/heritage')">去逛逛</el-button>
+        </el-empty>
         <div v-for="item in comments" :key="item.id" class="comment-row">
           <div class="comment-main">
             <div class="comment-text">{{ item.content }}</div>
@@ -120,17 +198,27 @@ async function saveProfile() {
         </div>
       </el-tab-pane>
 
-      <!-- 我的学习 -->
+      <!-- 我的学习（按课程聚合 + 完成度进度条） -->
       <el-tab-pane label="我的学习" name="study">
-        <el-empty v-if="!progressList.length" description="暂无学习记录，开始你的第一门课程吧" />
-        <div v-for="item in progressList" :key="item.id" class="study-item" @click="router.push(`/course/${item.courseId}`)">
-          <div class="study-main">
-            <div class="study-course">{{ item.courseName }}</div>
-            <div class="study-chapter">{{ item.chapterTitle }}</div>
+        <el-empty v-if="!progressList.length" description="还没有学习记录，选一门课开始学习吧">
+          <el-button type="danger" @click="router.push('/')">去看精品课程</el-button>
+        </el-empty>
+        <div v-for="course in courseStudy" :key="course.courseId" class="course-study"
+             @click="router.push(`/course/${course.courseId}`)">
+          <div class="course-study-head">
+            <span class="course-study-name">{{ course.courseName }}</span>
+            <span class="course-study-percent">{{ coursePercent(course.courseId) }}%</span>
           </div>
-          <div class="study-right">
-            <el-tag size="small" :type="item.finished ? 'success' : 'info'">{{ item.finished ? '已完成' : '学习中' }}</el-tag>
-            <span class="study-duration">{{ item.studyDuration }} 分钟</span>
+          <el-progress :percentage="coursePercent(course.courseId)" :stroke-width="8"
+                       :show-text="false" color="var(--gq-primary)" class="course-study-bar" />
+          <div v-for="item in course.records" :key="item.id" class="study-item">
+            <div class="study-main">
+              <div class="study-chapter">{{ item.chapterTitle }}</div>
+            </div>
+            <div class="study-right">
+              <el-tag size="small" :type="item.finished ? 'success' : 'info'">{{ item.finished ? '已完成' : '学习中' }}</el-tag>
+              <span class="study-duration">{{ item.studyDuration }} 分钟</span>
+            </div>
           </div>
         </div>
       </el-tab-pane>
@@ -212,12 +300,64 @@ async function saveProfile() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 10px;
+  padding: 10px;
   border-radius: 8px;
-  cursor: pointer;
 }
 .study-item:hover {
   background: #fdf6ec;
+}
+/* 学习数据仪表板 */
+.stat-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  flex: 1;
+  text-align: center;
+  border-radius: 12px;
+}
+.stat-num {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.stat-label {
+  margin-top: 6px;
+  color: #8a8578;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+/* 按课程聚合的学习块 */
+.course-study {
+  padding: 14px 10px;
+  border-bottom: 1px dashed var(--gq-border);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.course-study:hover {
+  background: #fdf6ec;
+}
+.course-study-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.course-study-name {
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+.course-study-percent {
+  color: var(--gq-primary);
+  font-weight: 700;
+}
+.course-study-bar {
+  margin: 8px 0 4px;
 }
 .study-course {
   font-weight: 600;

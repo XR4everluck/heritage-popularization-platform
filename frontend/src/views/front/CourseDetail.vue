@@ -1,10 +1,14 @@
 <script setup>
 /**
  * 课程学习页：课程信息 + 章节目录 + 视频播放 + 学习进度上报（时长累计/完成标记）
+ * 播放器：直链媒体使用 ArtPlayer（倍速/画质/全屏/弹幕开关/进度记忆），
+ *         B站外链走官方播放器内嵌，网页外链提供新窗口兜底
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import ArtPlayer from 'artplayer'
+import artplayerPluginDanmuku from 'artplayer-plugin-danmuku'
 import { getCourseDetail, getCourseChapters, getMyProgress, updateProgress, addCourseView } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import { defaultCover, coverFallback } from '../../utils/placeholder'
@@ -20,7 +24,6 @@ const currentChapter = ref(null)
 const myProgress = ref([])
 
 // 播放器引用与计时
-const videoRef = ref()
 const playedSeconds = ref(0)
 
 // B站外链视频（种子数据使用的外链形式）：转成官方播放器嵌入地址
@@ -33,7 +36,7 @@ const biliEmbed = computed(() => {
   return `https://player.bilibili.com/player.html?bvid=${bv[0]}&page=${page ? page[1] : 1}&autoplay=0&danmaku=0&high_quality=1`
 })
 
-// 非 B站的 http(s) 外链且不是直链媒体文件（mp4 等）：原生 video 大概率无法解码，
+// 非 B站的 http(s) 外链且不是直链媒体文件（mp4 等）：原生播放器无法解码，
 // 播放器下方给出"新窗口打开"兜底入口
 const isExternalPage = computed(() => {
   const url = currentChapter.value?.videoUrl || ''
@@ -41,11 +44,114 @@ const isExternalPage = computed(() => {
   return !/\.(mp4|webm|ogg|ogv|mov|mkv|mp3|wav|m4a)(\?.*)?$/i.test(url)
 })
 
+// 可直接播放的媒体文件（交给 ArtPlayer）
+const isMedia = computed(() => {
+  const url = currentChapter.value?.videoUrl || ''
+  return /\.(mp4|webm|ogg|ogv|mov|mkv|m4a)(\?.*)?$/i.test(url)
+})
+
+// ---------- ArtPlayer 播放器（进度本地记忆 + 弹幕 + 章节标记） ----------
+const playerRef = ref(null)
+let art = null            // ArtPlayer 实例（非响应式）
+let lastSaveTs = 0        // 进度保存节流时间戳
+
+/** 章节播放进度的 localStorage 键 */
+const memKey = (chapterId) => `heritage_art_progress_${chapterId}`
+
+/** 演示弹幕（本地视频无弹幕源，内置少量氛围弹幕供弹幕开关演示） */
+const DEMO_DANMUS = [
+  { time: 2, text: '欢迎来到非遗课堂～', color: '#ffffff' },
+  { time: 6, text: '传承中华优秀传统文化！', color: '#d4af37' },
+  { time: 12, text: '为国风打 call', color: '#c0392b' },
+  { time: 20, text: '先码后看，认真学起来', color: '#ffffff' },
+  { time: 30, text: '老师讲得真好', color: '#ffffff' }
+]
+
+/** 初始化 ArtPlayer：挂载到 playerRef 容器并恢复上次播放位置 */
+function initPlayer() {
+  if (!playerRef.value || !currentChapter.value) return
+  destroyPlayer()
+  const chapter = currentChapter.value
+  art = new ArtPlayer({
+    container: playerRef.value,
+    url: chapter.videoUrl,
+    poster: course.value?.cover || '',
+    volume: 0.7,
+    autoplay: false,
+    setting: true,
+    playbackRate: true,      // 倍速播放（设置菜单 0.5x~2x）
+    aspectRatio: true,
+    screenshot: true,
+    pip: true,
+    fullscreen: true,        // 全屏
+    fullscreenWeb: true,     // 网页全屏
+    miniProgressBar: true,
+    plugins: [
+      // 弹幕：设置菜单内含弹幕开关与发送框
+      artplayerPluginDanmuku({ danmus: [...DEMO_DANMUS], margin: [10, 25] })
+    ]
+  })
+  // 播放进度本地记忆：视频可播放后跳转到上次位置（once 语义，双事件保险）
+  const saved = Number(localStorage.getItem(memKey(chapter.id)) || 0)
+  let resumeApplied = false
+  const applyResume = () => {
+    if (resumeApplied) return
+    resumeApplied = true
+    if (saved > 10) {
+      // ArtPlayer 5 移除了 seek() 方法，使用 currentTime 属性跳转
+      art.currentTime = saved
+      art.notice.show = `已为你定位到上次观看位置 ${formatTime(saved)}`
+    }
+  }
+  art.on('video:canplay', applyResume)
+  art.on('ready', applyResume)
+  // 每 3 秒保存一次播放位置
+  art.on('video:timeupdate', () => {
+    const now = Date.now()
+    if (now - lastSaveTs > 3000) {
+      lastSaveTs = now
+      localStorage.setItem(memKey(chapter.id), String(Math.floor(art.currentTime)))
+    }
+    // 累计观看时长用于学习进度上报
+    playedSeconds.value += 4
+  })
+  // 播放自然结束：标记章节完成
+  art.on('video:ended', () => reportProgress(true))
+}
+
+function destroyPlayer() {
+  if (art) {
+    try {
+      localStorage.setItem(memKey(currentChapter.value?.id), String(Math.floor(art.currentTime)))
+    } catch { /* ignore */ }
+    art.destroy(false)
+    art = null
+  }
+}
+
+/** 秒数格式化为 mm:ss */
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+/** 切换章节时：直链媒体重建 ArtPlayer，其余销毁实例 */
+function mountPlayer() {
+  if (currentChapter.value?.videoUrl && isMedia.value) {
+    nextTick(initPlayer)
+  } else {
+    destroyPlayer()
+  }
+}
+
 const progressOfChapter = computed(() => {
   const map = {}
   myProgress.value.forEach((p) => (map[p.chapterId] = p))
   return map
 })
+
+onBeforeUnmount(() => destroyPlayer())
 
 onMounted(async () => {
   let courseRes
@@ -75,16 +181,12 @@ onMounted(async () => {
   }
 })
 
-/** 切换章节：保存上一章节的已观看时长 */
+/** 切换章节：保存上一章节的已观看时长并重建播放器 */
 function selectChapter(chapter) {
   reportProgress()
   currentChapter.value = chapter
   playedSeconds.value = 0
-}
-
-/** 记录播放时长（timeupdate 每4秒左右触发一次，此处只累计不提交） */
-function onTimeUpdate() {
-  playedSeconds.value += 4
+  mountPlayer()
 }
 
 /** 上报学习进度：累计时长 + 完成状态（未登录静默跳过） */
@@ -108,10 +210,8 @@ async function reportProgress(finished) {
   }
 }
 
-/** 播放自然结束：标记章节完成 */
-function onVideoEnded() {
-  reportProgress(true)
-}
+/** 播放自然结束：标记章节完成（ArtPlayer video:ended 事件回调挂载在 initPlayer 中） */
+
 </script>
 
 <template>
@@ -150,10 +250,17 @@ function onVideoEnded() {
         <iframe v-if="currentChapter?.videoUrl && isBili" :key="'bili-' + currentChapter.id"
                 :src="biliEmbed" scrolling="no" frameborder="0" allowfullscreen
                 class="player bili-player"></iframe>
-        <!-- 其他 http(s) 外链：直链媒体走原生 video，网页外链提供新窗口打开兜底 -->
-        <video v-else-if="currentChapter?.videoUrl" ref="videoRef" :key="currentChapter.id"
-               :src="currentChapter.videoUrl" controls class="player"
-               @timeupdate="onTimeUpdate" @ended="onVideoEnded" />
+        <!-- 直链媒体：ArtPlayer 播放器（倍速/画质/全屏/弹幕/进度记忆），进度条上叠加已学章节标记 -->
+        <div v-else-if="currentChapter?.videoUrl" class="art-wrap">
+          <div ref="playerRef" class="player art-container"></div>
+          <div class="chapter-marks" v-if="chapters.length > 1">
+            <span v-for="(c, i) in chapters" :key="c.id" class="chapter-mark"
+                  :class="{ learned: progressOfChapter[c.id]?.finished, active: c.id === currentChapter.id }"
+                  :style="{ left: ((i + 1) / chapters.length * 100) + '%' }"
+                  :title="c.title"
+                  @click="selectChapter(c)"></span>
+          </div>
+        </div>
         <div v-else class="player-placeholder">
           <el-empty :description="currentChapter ? '本章节视频暂未上传，可先阅读图文讲义' : '暂无章节内容'" :image-size="80" />
         </div>
@@ -244,6 +351,50 @@ function onVideoEnded() {
   aspect-ratio: 16 / 9;
   height: auto;
   border: 0;
+}
+/* ArtPlayer 容器与章节标记层 */
+.art-wrap {
+  position: relative;
+}
+.art-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  background: #000;
+}
+/* 进度条上方叠加的已学习章节标记点 */
+.chapter-marks {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 54px;
+  height: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.chapter-mark {
+  position: absolute;
+  bottom: 2px;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.chapter-mark:hover {
+  transform: translateX(-50%) scale(1.4);
+}
+.chapter-mark.learned {
+  background: var(--gq-gold);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+.chapter-mark.active {
+  background: var(--gq-primary);
+  border-color: #fff;
 }
 /* 外链视频兜底提示 */
 .external-tip {

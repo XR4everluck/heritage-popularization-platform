@@ -160,6 +160,30 @@ async function submitComment() {
 </script>
 
 <template>
+  <!-- 骨架屏（详情加载中） -->
+  <el-card v-if="!info && !notFound" shadow="never" class="skeleton-card">
+    <div class="magazine-skeleton">
+      <div class="sk-left">
+        <el-skeleton animated :loading="true">
+          <template #template>
+            <el-skeleton-item variant="image" style="width: 100%; height: 320px; border-radius: 12px" />
+            <el-skeleton-item variant="h1" style="width: 40%; margin-top: 16px" />
+            <el-skeleton-item variant="text" style="margin-top: 12px" />
+            <el-skeleton-item variant="text" style="width: 80%" />
+          </template>
+        </el-skeleton>
+      </div>
+      <div class="sk-right">
+        <el-skeleton animated :loading="true">
+          <template #template>
+            <el-skeleton-item variant="image" style="width: 100%; height: 260px; border-radius: 12px" />
+            <el-skeleton-item variant="image" style="width: 100%; height: 200px; border-radius: 12px; margin-top: 16px" />
+          </template>
+        </el-skeleton>
+      </div>
+    </div>
+  </el-card>
+
   <!-- 项目不存在/已被删除时的友好空状态 -->
   <el-card v-if="notFound" shadow="never" class="notfound-card">
     <el-empty description="该项目不存在或已被删除">
@@ -264,7 +288,7 @@ async function submitComment() {
     <el-card shadow="never" class="block-card" v-if="recommendList.length">
       <template #header><b>猜你喜欢</b></template>
       <el-row :gutter="16">
-        <el-col v-for="item in recommendList" :key="item.id" :span="6">
+        <el-col v-for="item in recommendList" :key="item.id" :xs="12" :sm="12" :md="8" :lg="6">
           <HeritageCard :item="{ ...item, categoryName: info.categoryName }"
                         @open="router.push(`/heritage/${item.id}`)" />
         </el-col>
@@ -306,8 +330,26 @@ async function submitComment() {
   align-items: center;
   justify-content: center;
 }
-.head-card {
+/* 详情页骨架屏两栏 */
+.skeleton-card {
   margin-bottom: 16px;
+}
+.magazine-skeleton {
+  display: flex;
+  gap: 16px;
+}
+.sk-left {
+  flex: 7;
+  min-width: 0;
+}
+.sk-right {
+  flex: 3;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .magazine-skeleton {
+    flex-direction: column;
+  }
 }
 
 /* ---------- 杂志式两栏布局 ---------- */
