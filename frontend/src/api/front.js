@@ -13,6 +13,10 @@ export function getHeritageDetail(id) {
   return request.get(`/api/heritage/${id}`)
 }
 
+export function getHeritageHistory(id) {
+  return request.get(`/api/heritage/${id}/history`)
+}
+
 export function addHeritageView(id) {
   return request.post(`/api/heritage/${id}/view`)
 }

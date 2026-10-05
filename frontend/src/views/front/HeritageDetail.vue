@@ -1,16 +1,19 @@
 <script setup>
 /**
- * 非遗详情页：基本信息 + 富文本详情 + 关联课程 + 收藏 + 评论区
+ * 非遗详情页（杂志式两栏版式）：
+ * 左栏 70% 大图 + 标题 + 富文本 + 历史时间轴；右栏 30% 悬浮信息卡 + 相关课程 + 收藏；
+ * 评论区与"猜你喜欢"通栏置于两栏之下
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getHeritageDetail, addHeritageView, getCourseListByHeritage, getCourseChapters, getCommentPage, postComment,
+import { getHeritageDetail, getHeritageHistory, addHeritageView, getCourseListByHeritage, getCourseChapters, getCommentPage, postComment,
          getMyCollections, addCollection, removeCollection, getRecommend } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import { defaultCover, coverFallback } from '../../utils/placeholder'
 import CourseCard from '../../components/CourseCard.vue'
 import HeritageCard from '../../components/HeritageCard.vue'
+import HistoryTimeline from '../../components/HistoryTimeline.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +21,8 @@ const userStore = useUserStore()
 
 const info = ref(null)
 const courses = ref([])
+// 历史发展节点（时间轴数据）
+const historyNodes = ref([])
 // 课程章节视频统计：{ [课程id]: { total, videos } }，用于区分有视频/无视频章节
 const courseStats = ref({})
 // 猜你喜欢：同分类随机推荐（排除当前项目）
@@ -45,6 +50,8 @@ onMounted(async () => {
   info.value = detailRes.data
   // 浏览量自增（不阻塞页面）
   addHeritageView(route.params.id).catch(() => {})
+  // 历史发展节点（失败不阻塞主内容）
+  getHeritageHistory(route.params.id).then((res) => { historyNodes.value = res.data }).catch(() => {})
   // 关联课程 + 各课程章节的视频统计
   const courseRes = await getCourseListByHeritage(route.params.id)
   courses.value = courseRes.data
@@ -53,6 +60,16 @@ onMounted(async () => {
   loadComments()
   loadCollectState()
 })
+
+/** 濒危程度标签配色 */
+const endangerTagType = computed(() => {
+  const map = { '濒危': 'danger', '急需保护': 'danger', '脆弱': 'warning', '状况良好': 'success' }
+  return map[info.value?.endangerLevel] || 'info'
+})
+
+/** 代表作品拆分为标签墙（支持 、 ， ; ; 分隔） */
+const workTags = computed(() => (info.value?.representativeWorks || '')
+  .split(/[、，,;；]/).map((s) => s.trim()).filter(Boolean))
 
 /** 猜你喜欢：同分类随机推荐 4 个项目（排除当前项目），失败静默 */
 async function loadRecommend() {
@@ -151,51 +168,99 @@ async function submitComment() {
   </el-card>
 
   <div v-else-if="info" class="detail-page">
-    <!-- 头部信息卡 -->
-    <el-card shadow="never" class="head-card">
-      <div class="head-body">
-        <img :src="info.coverImage || defaultCover(info.name)" class="head-cover" />
-        <div class="head-info">
-          <h2>
-            {{ info.name }}
-            <el-tag :type="levelTagType">{{ info.level }}</el-tag>
-            <el-tag type="info">{{ info.categoryName }}</el-tag>
-          </h2>
-          <div class="info-row"><span class="label">所属地区：</span>{{ info.region || '-' }}</div>
-          <div class="info-row"><span class="label">代表性传承人：</span>{{ info.inheritor || '-' }}</div>
-          <div class="info-row summary"><span class="label">简介：</span>{{ info.summary }}</div>
-          <div class="head-meta">
-            <span><el-icon><View /></el-icon> 浏览 {{ info.viewCount }}</span>
-            <span><el-icon><Star /></el-icon> 收藏 {{ info.collectionCount }}</span>
-            <span><el-icon><Clock /></el-icon> 发布于 {{ (info.publishTime || '').slice(0, 10) }}</span>
-            <el-button type="danger" :plain="collected" :loading="collecting" @click="toggleCollect">
-              <el-icon><StarFilled /></el-icon>&nbsp;{{ collected ? '取消收藏' : '收藏' }}
-            </el-button>
-          </div>
+    <!-- 杂志式两栏：左 70% 主内容 + 右 30% 悬浮信息栏 -->
+    <div class="magazine">
+      <!-- 左栏 -->
+      <div class="magazine-main">
+        <!-- 大图封面 -->
+        <div class="hero-wrap">
+          <img :src="info.coverImage || defaultCover(info.name)" class="hero-cover"
+               @error="coverFallback($event, info.name)" />
+          <div class="hero-badge">{{ info.level }}</div>
         </div>
+
+        <!-- 标题与标签栏 -->
+        <h2 class="magazine-title">
+          {{ info.name }}
+          <el-tag :type="levelTagType" effect="dark">{{ info.level }}</el-tag>
+          <el-tag type="info" effect="plain">{{ info.categoryName }}</el-tag>
+        </h2>
+        <div class="magazine-meta">
+          <span><el-icon><View /></el-icon> 浏览 {{ info.viewCount }}</span>
+          <span><el-icon><Star /></el-icon> 收藏 {{ info.collectionCount }}</span>
+          <span><el-icon><Clock /></el-icon> 发布于 {{ (info.publishTime || '').slice(0, 10) }}</span>
+        </div>
+        <p class="magazine-summary">{{ info.summary }}</p>
+
+        <!-- 详细富文本 -->
+        <el-card shadow="never" class="block-card">
+          <template #header><b>详细介绍</b></template>
+          <div class="rich-content" v-html="info.content || '暂无详细介绍'"></div>
+        </el-card>
+
+        <!-- 历史发展时间轴 -->
+        <el-card shadow="never" class="block-card">
+          <template #header><b>历史沿革</b></template>
+          <HistoryTimeline :nodes="historyNodes" />
+        </el-card>
       </div>
-    </el-card>
 
-    <!-- 详细介绍 -->
-    <el-card shadow="never" class="block-card">
-      <template #header><b>详细介绍</b></template>
-      <div class="rich-content" v-html="info.content || '暂无详细介绍'"></div>
-    </el-card>
+      <!-- 右栏：悬浮信息卡 -->
+      <aside class="magazine-side">
+        <el-card shadow="never" class="side-card info-card">
+          <div class="info-row">
+            <span class="info-label"><el-icon><Clock /></el-icon> 起源年代</span>
+            <span class="info-value">{{ info.originAge || '待补充' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label"><el-icon><Location /></el-icon> 分布地区</span>
+            <span class="info-value">{{ info.distributionArea || info.region || '待补充' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label"><el-icon><User /></el-icon> 代表传承人</span>
+            <span class="info-value">{{ info.inheritor || '群体传承' }}</span>
+          </div>
+          <div class="info-block">
+            <span class="info-label"><el-icon><Trophy /></el-icon> 代表作品</span>
+            <div class="work-tags" v-if="workTags.length">
+              <el-tag v-for="work in workTags" :key="work" size="small" effect="plain" class="work-tag">{{ work }}</el-tag>
+            </div>
+            <span v-else class="info-value">待补充</span>
+          </div>
+          <div class="info-block">
+            <span class="info-label"><el-icon><Warning /></el-icon> 濒危程度</span>
+            <div class="endanger-wall">
+              <el-tag :type="endangerTagType" effect="dark" size="large">{{ info.endangerLevel || '暂无评估' }}</el-tag>
+            </div>
+          </div>
+          <el-button type="danger" :plain="collected" :loading="collecting" class="collect-btn"
+                     @click="toggleCollect">
+            <el-icon><StarFilled /></el-icon>&nbsp;{{ collected ? '取消收藏' : '收藏本项目' }}
+          </el-button>
+        </el-card>
 
-    <!-- 关联课程（统一卡片风格，附章节视频统计） -->
-    <el-card shadow="never" class="block-card">
-      <template #header><b>相关课程（{{ courses.length }}）</b></template>
-      <el-empty v-if="!courses.length" description="该项目暂无课程" :image-size="60" />
-      <el-row :gutter="16" v-else>
-        <el-col v-for="course in courses" :key="course.id" :span="12">
-          <CourseCard :item="{ ...course, chapterCount: courseStats[course.id]?.total }"
-                      :tag="videoLabel(course.id)"
-                      class="related-course" @open="router.push(`/course/${course.id}`)" />
-        </el-col>
-      </el-row>
-    </el-card>
+        <!-- 相关课程（紧凑列表） -->
+        <el-card shadow="never" class="side-card">
+          <template #header><b>相关课程（{{ courses.length }}）</b></template>
+          <el-empty v-if="!courses.length" description="暂无课程" :image-size="50" />
+          <div v-for="course in courses" :key="course.id" class="side-course"
+               @click="router.push(`/course/${course.id}`)">
+            <img :src="course.cover || defaultCover(course.name, 160, 100)" class="side-course-cover" />
+            <div class="side-course-info">
+              <div class="side-course-name">{{ course.name }}</div>
+              <div class="side-course-meta">
+                <el-tag v-if="videoLabel(course.id)" size="small" :type="videoLabel(course.id).type" effect="light">
+                  {{ videoLabel(course.id).text }}
+                </el-tag>
+                <span>{{ course.duration }} 分钟</span>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </aside>
+    </div>
 
-    <!-- 猜你喜欢：同分类随机推荐 -->
+    <!-- 猜你喜欢：同分类随机推荐（通栏） -->
     <el-card shadow="never" class="block-card" v-if="recommendList.length">
       <template #header><b>猜你喜欢</b></template>
       <el-row :gutter="16">
@@ -206,7 +271,7 @@ async function submitComment() {
       </el-row>
     </el-card>
 
-    <!-- 评论区 -->
+    <!-- 评论区（通栏，保留原有功能） -->
     <el-card shadow="never" class="block-card">
       <template #header><b>评论（{{ commentTotal }}）</b></template>
       <div class="comment-editor">
@@ -244,50 +309,180 @@ async function submitComment() {
 .head-card {
   margin-bottom: 16px;
 }
-.head-body {
+
+/* ---------- 杂志式两栏布局 ---------- */
+.magazine {
   display: flex;
-  gap: 24px;
+  gap: 16px;
+  align-items: flex-start;
 }
-.head-cover {
-  width: 360px;
-  height: 240px;
+.magazine-main {
+  flex: 7;
+  min-width: 0;
+}
+/* 大图封面：通栏主视觉 + 左下角级别印章角标 */
+.hero-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(44, 62, 80, 0.12);
+}
+.hero-cover {
+  width: 100%;
+  height: 320px;
   object-fit: cover;
-  border-radius: 8px;
-  flex-shrink: 0;
+  display: block;
 }
-.head-info h2 {
+.hero-badge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background: rgba(192, 57, 43, 0.92);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+  padding: 6px 16px;
+  border-radius: 0 12px 0 0;
+}
+.magazine-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin: 16px 0 8px;
+  font-size: 26px;
 }
-.info-row {
-  margin-bottom: 10px;
-  line-height: 1.7;
-}
-.info-row.summary {
-  color: #606266;
-}
-.label {
-  color: #909399;
-}
-.head-meta {
-  margin-top: 14px;
+.magazine-meta {
   display: flex;
   align-items: center;
   gap: 20px;
-  color: #909399;
+  color: #8a8578;
   font-size: 13px;
+  margin-bottom: 10px;
 }
-.head-meta span {
+.magazine-meta span {
   display: flex;
   align-items: center;
   gap: 4px;
 }
-.block-card {
+.magazine-summary {
+  color: var(--gq-text-secondary);
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+
+/* ---------- 右侧悬浮信息栏 ---------- */
+.magazine-side {
+  flex: 3;
+  min-width: 0;
+  position: sticky;
+  top: 72px;
+  align-self: flex-start;
+}
+.side-card {
   margin-bottom: 16px;
 }
-.related-course {
+.info-card .info-row,
+.info-card .info-block {
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--gq-border);
+}
+.info-card .info-row:last-of-type {
+  border-bottom: 1px dashed var(--gq-border);
+}
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8a8578;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.info-value {
+  color: var(--gq-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.info-block {
+  display: block;
+}
+/* 代表作品标签墙 */
+.work-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.work-tag {
+  border-color: var(--gq-border);
+  color: var(--gq-secondary);
+}
+/* 濒危程度标签墙 */
+.endanger-wall {
+  margin-top: 4px;
+}
+.collect-btn {
+  width: 100%;
+  margin-top: 14px;
+}
+/* 相关课程紧凑列表 */
+.side-course {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  border-bottom: 1px dashed var(--gq-border);
+}
+.side-course:last-child {
+  border-bottom: none;
+}
+.side-course:hover .side-course-name {
+  color: var(--gq-primary);
+}
+.side-course-cover {
+  width: 84px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.side-course-info {
+  flex: 1;
+  min-width: 0;
+}
+.side-course-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.side-course-meta {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
+/* 窄屏回退为单栏 */
+@media (max-width: 900px) {
+  .magazine {
+    flex-direction: column;
+  }
+  .magazine-side {
+    position: static;
+    width: 100%;
+  }
+}
+.block-card {
   margin-bottom: 16px;
 }
 .comment-editor {

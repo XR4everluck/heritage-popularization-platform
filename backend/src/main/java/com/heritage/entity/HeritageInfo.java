@@ -55,6 +55,22 @@ public class HeritageInfo {
     @TableField("cover_image")
     private String coverImage;
 
+    /** 起源年代（如"唐代""1906年"） */
+    @TableField("origin_age")
+    private String originAge;
+
+    /** 分布地区（当前流布范围） */
+    @TableField("distribution_area")
+    private String distributionArea;
+
+    /** 代表作品（名称/曲目/剧目等） */
+    @TableField("representative_works")
+    private String representativeWorks;
+
+    /** 濒危程度：濒危/急需保护/脆弱/状况良好 */
+    @TableField("endanger_level")
+    private String endangerLevel;
+
     /** 浏览量（冗余统计字段，业务层累加） */
     @TableField("view_count")
     private Integer viewCount;

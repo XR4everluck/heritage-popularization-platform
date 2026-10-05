@@ -1,7 +1,9 @@
 package com.heritage.controller.front;
 
 import com.heritage.common.Result;
+import com.heritage.entity.HeritageHistory;
 import com.heritage.entity.HeritageInfo;
+import com.heritage.service.HeritageHistoryService;
 import com.heritage.service.HeritageInfoService;
 import com.heritage.vo.HeritageVO;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +19,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 /**
- * 前台非遗项目接口：分页检索（分类/关键词/级别）、详情、浏览量自增、同类随机推荐
+ * 前台非遗项目接口：分页检索（分类/关键词/级别）、详情、历史节点、浏览量自增、同类随机推荐
  */
 @RestController
 @RequestMapping("/api/heritage")
@@ -25,6 +27,8 @@ import java.util.List;
 public class FrontHeritageController {
 
     private final HeritageInfoService heritageInfoService;
+
+    private final HeritageHistoryService heritageHistoryService;
 
     /**
      * 分页查询非遗列表（仅已发布），支持分类筛选、关键词搜索、级别筛选
@@ -51,6 +55,19 @@ public class FrontHeritageController {
     @GetMapping("/{id}")
     public Result<HeritageVO> detail(@PathVariable Long id) {
         return Result.ok(heritageInfoService.getDetail(id, true));
+    }
+
+    /**
+     * 查询非遗项目的历史发展节点（按 id 升序，即种子数据的年代顺序）
+     *
+     * @param id 非遗项目ID
+     */
+    @GetMapping("/{id}/history")
+    public Result<List<HeritageHistory>> history(@PathVariable Long id) {
+        return Result.ok(heritageHistoryService.lambdaQuery()
+                .eq(HeritageHistory::getHeritageId, id)
+                .orderByAsc(HeritageHistory::getId)
+                .list());
     }
 
     /**

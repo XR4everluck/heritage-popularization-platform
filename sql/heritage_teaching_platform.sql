@@ -82,6 +82,10 @@ CREATE TABLE `heritage_info` (
   `summary`         VARCHAR(500) DEFAULT NULL            COMMENT '非遗简介（列表页摘要展示）',
   `content`         MEDIUMTEXT   DEFAULT NULL            COMMENT '详细内容（富文本图文详情）',
   `cover_image`     VARCHAR(255) DEFAULT NULL            COMMENT '封面图片地址',
+  `origin_age`         VARCHAR(50)  DEFAULT NULL         COMMENT '起源年代（如"唐代""1906年"）',
+  `distribution_area`  VARCHAR(255) DEFAULT NULL         COMMENT '分布地区（当前流布范围）',
+  `representative_works` VARCHAR(500) DEFAULT NULL       COMMENT '代表作品（名称/曲目/剧目等）',
+  `endanger_level`     VARCHAR(20)  DEFAULT NULL         COMMENT '濒危程度：濒危/急需保护/脆弱/状况良好',
   `view_count`      INT          NOT NULL DEFAULT 0      COMMENT '浏览量（冗余统计字段，业务层累加）',
   `collection_count` INT         NOT NULL DEFAULT 0      COMMENT '收藏数（冗余统计字段，业务层维护）',
   `publish_time`    DATETIME     DEFAULT NULL            COMMENT '发布时间（NULL 表示未发布/草稿）',
@@ -92,6 +96,23 @@ CREATE TABLE `heritage_info` (
   KEY `idx_category_id` (`category_id`),
   KEY `idx_level` (`level`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '非遗项目表';
+
+-- ------------------------------------------------------------
+-- 3.5 非遗历史节点表 heritage_history
+--     记录非遗项目的发展历程节点（阶段3-1 新增）；
+--     作为内容从属数据采用物理删除，种子数据按年代先后插入，按 id 升序即时间顺序
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `heritage_history`;
+CREATE TABLE `heritage_history` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '历史节点ID，主键自增',
+  `heritage_id` BIGINT       NOT NULL                COMMENT '非遗项目ID（业务层关联 heritage_info.id）',
+  `year`        VARCHAR(30)  DEFAULT NULL            COMMENT '年代（如"唐代""1955年"，古代项目可填时期名称）',
+  `event`       VARCHAR(200) NOT NULL                COMMENT '事件标题',
+  `description` VARCHAR(500) DEFAULT NULL            COMMENT '事件描述',
+  `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_heritage_id` (`heritage_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '非遗历史节点表';
 
 -- ------------------------------------------------------------
 -- 4. 课程表 course
