@@ -24,4 +24,11 @@ public interface StudyProgressService extends IService<StudyProgress> {
      * @param courseId null 查全部课程
      */
     List<ProgressVO> listMy(Long userId, Long courseId);
+
+    /**
+     * 查询用户最近一次学习记录（按更新时间倒序取第一条），用于首页"继续学习"卡片
+     *
+     * @return 最近学习记录；从未学习过返回 null
+     */
+    ProgressVO latest(Long userId);
 }

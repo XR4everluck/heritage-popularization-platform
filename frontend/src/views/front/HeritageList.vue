@@ -5,7 +5,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCategoryList, getHeritagePage } from '../../api/front'
-import { defaultCover } from '../../utils/placeholder'
+import HeritageCard from '../../components/HeritageCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,7 +17,7 @@ const loading = ref(false)
 const query = ref({
   categoryId: route.query.categoryId ? Number(route.query.categoryId) : null,
   level: null,
-  keyword: '',
+  keyword: route.query.keyword ? String(route.query.keyword) : '',
   page: 1,
   pageSize: 8
 })
@@ -30,6 +30,13 @@ onMounted(async () => {
 
 watch(() => route.query.categoryId, (val) => {
   query.value.categoryId = val ? Number(val) : null
+  query.value.page = 1
+  loadData()
+})
+
+// 首页搜索框/热门标签跳转过来时自动执行搜索
+watch(() => route.query.keyword, (val) => {
+  query.value.keyword = val ? String(val) : ''
   query.value.page = 1
   loadData()
 })
@@ -70,26 +77,11 @@ function search() {
       </div>
     </el-card>
 
-    <!-- 卡片列表 -->
+    <!-- 卡片列表（统一卡片风格） -->
     <el-empty v-if="!list.length && !loading" description="暂无相关非遗项目" />
     <el-row :gutter="16" class="card-list">
       <el-col v-for="item in list" :key="item.id" :span="6">
-        <el-card shadow="hover" class="heritage-card" :body-style="{ padding: 0 }"
-                 @click="router.push(`/heritage/${item.id}`)">
-          <img :src="item.coverImage || defaultCover(item.name)" class="card-cover" />
-          <div class="card-body">
-            <div class="card-name">{{ item.name }}</div>
-            <div class="card-tags">
-              <el-tag size="small" :type="item.level === '国家级' ? 'danger' : 'warning'">{{ item.level }}</el-tag>
-              <el-tag size="small" type="info">{{ item.categoryName }}</el-tag>
-            </div>
-            <div class="card-summary">{{ item.summary }}</div>
-            <div class="card-meta">
-              <span>{{ item.region }}</span>
-              <span><el-icon><View /></el-icon>{{ item.viewCount }}</span>
-            </div>
-          </div>
-        </el-card>
+        <HeritageCard :item="item" @open="router.push(`/heritage/${item.id}`)" />
       </el-col>
     </el-row>
 
@@ -112,49 +104,8 @@ function search() {
 .card-list {
   min-height: 300px;
 }
-.heritage-card {
+.card-list .el-col {
   margin-bottom: 16px;
-  cursor: pointer;
-}
-.card-cover {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  display: block;
-}
-.card-body {
-  padding: 12px;
-}
-.card-name {
-  font-weight: 700;
-  font-size: 15px;
-}
-.card-tags {
-  margin: 8px 0;
-  display: flex;
-  gap: 6px;
-}
-.card-summary {
-  color: #909399;
-  font-size: 12px;
-  height: 36px;
-  line-height: 18px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-.card-meta {
-  margin-top: 8px;
-  color: #909399;
-  font-size: 12px;
-  display: flex;
-  justify-content: space-between;
-}
-.card-meta span {
-  display: flex;
-  align-items: center;
-  gap: 2px;
 }
 .pager {
   display: flex;

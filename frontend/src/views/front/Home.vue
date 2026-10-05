@@ -1,42 +1,69 @@
 <script setup>
 /**
- * 首页：轮播图 + 分类导航 + 精品课程 + 推荐非遗 + 最新公告
+ * 首页：轮播图 + 搜索框(热门标签) + 继续学习 + 分类导航 + 精品课程 + 非遗博览 + 猜你喜欢 + 最新公告
  */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getBanners, getCategoryList, getHeritagePage, getNoticePage, getNoticeDetail, getHotCourses } from '../../api/front'
-import { defaultCover, coverFallback } from '../../utils/placeholder'
+import { getBanners, getCategoryList, getHeritagePage, getNoticePage, getNoticeDetail,
+         getHotCourses, getLatestProgress, getRecommend } from '../../api/front'
+import { useUserStore } from '../../store/user'
+import { coverFallback } from '../../utils/placeholder'
+import HeritageCard from '../../components/HeritageCard.vue'
+import CourseCard from '../../components/CourseCard.vue'
+import CateIcon from '../../components/CateIcon.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
+
 const banners = ref([])
 const categories = ref([])
 const hotCourses = ref([])
 const heritageList = ref([])
+const recommendList = ref([])
 const notices = ref([])
 const noticeDetail = ref(null)
 const noticeVisible = ref(false)
+const keyword = ref('')
+const latest = ref(null)
+
+// 热门搜索标签（点击直达列表页并自动搜索）
+const HOT_KEYWORDS = ['昆曲', '剪纸', '皮影戏', '二十四节气']
 
 onMounted(async () => {
-  const [b, c, h, n, courses] = await Promise.all([
+  const [b, c, h, n, courses, recommend] = await Promise.all([
     getBanners(),
     getCategoryList(),
     getHeritagePage({ page: 1, pageSize: 8 }),
     getNoticePage({ page: 1, pageSize: 5 }),
-    // 热门课程接口失败不阻塞首页其他板块
-    getHotCourses(4).catch(() => ({ data: [] }))
+    // 热门课程/推荐接口失败不阻塞首页其他板块
+    getHotCourses(4).catch(() => ({ data: [] })),
+    getRecommend({ limit: 4 }).catch(() => ({ data: [] }))
   ])
   banners.value = b.data
   categories.value = c.data
   hotCourses.value = courses.data
   heritageList.value = h.data.records
+  recommendList.value = recommend.data
   notices.value = n.data.records
+  loadLatest()
 })
 
-/** 总时长展示：超过 60 分钟换算为"小时+分钟" */
-function formatDuration(minutes) {
-  if (!minutes) return '暂无时长'
-  if (minutes < 60) return `${minutes} 分钟`
-  return `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分钟`
+/** 加载最近学习记录（仅登录用户；失败静默） */
+async function loadLatest() {
+  if (!userStore.isLogin) return
+  try {
+    const res = await getLatestProgress()
+    latest.value = res.data
+  } catch {
+    /* 未登录或无记录时忽略 */
+  }
+}
+
+/** 搜索：跳转非遗列表页并携带关键词（列表页监听 query 自动搜索） */
+function goSearch(kw) {
+  const word = (kw ?? keyword.value ?? '').trim()
+  if (!word) return
+  router.push({ path: '/heritage', query: { keyword: word } })
 }
 
 /** 查看公告详情（弹窗展示） */
@@ -69,39 +96,49 @@ function goBanner(banner) {
       </el-carousel-item>
     </el-carousel>
 
-    <!-- 分类导航 -->
+    <!-- 搜索框 + 热门搜索 -->
+    <div class="search-section">
+      <div class="search-box">
+        <el-input v-model="keyword" size="large" placeholder="搜索你感兴趣的非遗项目，如：昆曲、剪纸……"
+                  clearable @keyup.enter="goSearch()">
+          <template #append>
+            <el-button type="danger" @click="goSearch()"><el-icon><Search /></el-icon>&nbsp;搜索</el-button>
+          </template>
+        </el-input>
+        <div class="hot-keywords">
+          <span class="hot-label">热门搜索：</span>
+          <el-tag v-for="kw in HOT_KEYWORDS" :key="kw" class="hot-tag" effect="plain" round
+                  @click="goSearch(kw)">{{ kw }}</el-tag>
+        </div>
+      </div>
+    </div>
+
+    <!-- 继续学习 -->
+    <div class="section continue-section" v-if="userStore.isLogin && latest">
+      <div class="continue-card" @click="router.push(`/course/${latest.courseId}?chapter=${latest.chapterId}`)">
+        <span class="continue-badge">继续学习</span>
+        <el-icon class="continue-icon" :size="26"><VideoPlay /></el-icon>
+        <div class="continue-info">
+          <div class="continue-course">{{ latest.courseName }}</div>
+          <div class="continue-chapter">
+            上次学到：{{ latest.chapterTitle }} · 已学 {{ latest.studyDuration }} 分钟
+            <el-tag v-if="latest.finished" size="small" type="success">本章已完成</el-tag>
+          </div>
+        </div>
+        <el-button type="danger" plain size="small">接着学&nbsp;<el-icon><ArrowRight /></el-icon></el-button>
+      </div>
+    </div>
+
+    <!-- 分类导航（国风线性图标 + hover 水波纹） -->
     <div class="section">
       <h3 class="section-title">非遗分类</h3>
       <div class="category-grid">
         <div v-for="cate in categories" :key="cate.id" class="category-item"
              @click="router.push({ path: '/heritage', query: { categoryId: cate.id } })">
-          <span class="cate-icon">{{ cate.icon || '🏆' }}</span>
+          <span class="cate-icon"><CateIcon :name="cate.name" /></span>
           <span>{{ cate.name }}</span>
         </div>
       </div>
-    </div>
-
-    <!-- 精品课程（非遗博览板块上方） -->
-    <div class="section" v-if="hotCourses.length">
-      <h3 class="section-title">精品课程</h3>
-      <el-row :gutter="16">
-        <el-col v-for="course in hotCourses" :key="course.id" :span="6">
-          <el-card shadow="hover" class="heritage-card" :body-style="{ padding: 0 }"
-                   @click="router.push(`/course/${course.id}`)">
-            <div class="course-cover-wrap">
-              <img :src="course.cover || defaultCover(course.name)" class="card-cover" />
-              <span class="course-duration"><el-icon><VideoCamera /></el-icon>{{ formatDuration(course.duration) }}</span>
-            </div>
-            <div class="card-body">
-              <div class="card-name course-name-ellipsis" :title="course.name">{{ course.name }}</div>
-              <div class="card-meta">
-                <span class="course-teacher" :title="course.teacher">讲师：{{ course.teacher || '-' }}</span>
-                <span><el-icon><View /></el-icon>{{ course.viewCount }}</span>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
     </div>
 
     <div class="home-body">
@@ -113,20 +150,8 @@ function goBanner(banner) {
         </div>
         <el-row :gutter="16">
           <el-col v-for="item in heritageList" :key="item.id" :span="6">
-            <el-card shadow="hover" class="heritage-card" :body-style="{ padding: 0 }"
-                     @click="router.push(`/heritage/${item.id}`)">
-              <img :src="item.coverImage || defaultCover(item.name)" class="card-cover" />
-              <div class="card-body">
-                <div class="card-name">
-                  {{ item.name }}
-                  <el-tag size="small" :type="item.level === '国家级' ? 'danger' : 'warning'">{{ item.level }}</el-tag>
-                </div>
-                <div class="card-meta">
-                  <span>{{ item.region }}</span>
-                  <span><el-icon><View /></el-icon>{{ item.viewCount }}</span>
-                </div>
-              </div>
-            </el-card>
+            <HeritageCard :item="item" class="grid-card"
+                          @open="router.push(`/heritage/${item.id}`)" />
           </el-col>
         </el-row>
       </div>
@@ -143,6 +168,28 @@ function goBanner(banner) {
           <el-empty v-if="!notices.length" description="暂无公告" :image-size="60" />
         </el-card>
       </div>
+    </div>
+
+    <!-- 精品课程 -->
+    <div class="section" v-if="hotCourses.length">
+      <div class="section-head">
+        <h3 class="section-title">精品课程</h3>
+      </div>
+      <el-row :gutter="16">
+        <el-col v-for="course in hotCourses" :key="course.id" :span="6">
+          <CourseCard :item="course" class="grid-card" @open="router.push(`/course/${course.id}`)" />
+        </el-col>
+      </el-row>
+    </div>
+
+    <!-- 猜你喜欢 -->
+    <div class="section" v-if="recommendList.length">
+      <h3 class="section-title">猜你喜欢</h3>
+      <el-row :gutter="16">
+        <el-col v-for="item in recommendList" :key="item.id" :span="6">
+          <HeritageCard :item="item" class="grid-card" @open="router.push(`/heritage/${item.id}`)" />
+        </el-col>
+      </el-row>
     </div>
 
     <!-- 公告详情弹窗 -->
@@ -177,7 +224,7 @@ function goBanner(banner) {
 }
 .section-title {
   margin-bottom: 14px;
-  border-left: 4px solid #c0392b;
+  border-left: 4px solid var(--gq-primary);
   padding-left: 10px;
 }
 .section-head {
@@ -185,29 +232,145 @@ function goBanner(banner) {
   align-items: center;
   justify-content: space-between;
 }
+.grid-card {
+  margin-bottom: 16px;
+}
+
+/* ---------- 搜索区 ---------- */
+.search-section {
+  margin-top: 16px;
+}
+.search-box {
+  background: var(--gq-card);
+  border: 1px solid var(--gq-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 10px rgba(44, 62, 80, 0.05);
+}
+.hot-keywords {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hot-label {
+  color: #8a8578;
+  font-size: 13px;
+}
+.hot-tag {
+  cursor: pointer;
+  color: var(--gq-primary);
+  border-color: var(--gq-border);
+}
+.hot-tag:hover {
+  background: var(--gq-primary);
+  border-color: var(--gq-primary);
+  color: #fff;
+}
+
+/* ---------- 继续学习 ---------- */
+.continue-card {
+  background: var(--gq-card);
+  border: 1px solid var(--gq-border);
+  border-left: 4px solid var(--gq-primary);
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.continue-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.12);
+}
+.continue-badge {
+  background: var(--gq-primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.continue-icon {
+  color: var(--gq-primary);
+  flex-shrink: 0;
+}
+.continue-info {
+  flex: 1;
+  min-width: 0;
+}
+.continue-course {
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+.continue-chapter {
+  margin-top: 3px;
+  color: #8a8578;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 分类导航（水波纹） ---------- */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 12px;
 }
 .category-item {
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--gq-card);
+  border: 1px solid var(--gq-border);
+  border-radius: 12px;
+  padding: 18px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .category-item:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(192, 57, 43, 0.12);
 }
-.cate-icon {
-  font-size: 28px;
+/* hover 水波纹：中心圆形涟漪扩散 */
+.category-item::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(192, 57, 43, 0.10) 0%, rgba(192, 57, 43, 0.04) 45%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease;
+  pointer-events: none;
 }
+.category-item:hover::after {
+  width: 260%;
+  height: 260%;
+}
+.cate-icon {
+  color: var(--gq-primary);
+  position: relative;
+  z-index: 1;
+}
+.category-item span:last-child {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- 布局 ---------- */
 .home-body {
   display: flex;
   gap: 20px;
@@ -221,73 +384,12 @@ function goBanner(banner) {
   flex-shrink: 0;
   margin-top: 24px;
 }
-.heritage-card {
-  margin-bottom: 16px;
-  cursor: pointer;
-}
-.card-cover {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  display: block;
-}
-/* 精品课程卡片 */
-.course-cover-wrap {
-  position: relative;
-}
-.course-duration {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-.course-name-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.course-teacher {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.card-body {
-  padding: 12px;
-}
-.card-name {
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-.card-meta {
-  margin-top: 8px;
-  color: #909399;
-  font-size: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.card-meta span {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
 .notice-item {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 9px 0;
-  border-bottom: 1px dashed #ebeef5;
+  border-bottom: 1px dashed var(--gq-border);
   cursor: pointer;
   font-size: 13px;
 }

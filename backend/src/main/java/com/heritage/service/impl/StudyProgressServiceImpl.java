@@ -67,6 +67,36 @@ public class StudyProgressServiceImpl extends ServiceImpl<StudyProgressMapper, S
     }
 
     @Override
+    public ProgressVO latest(Long userId) {
+        // 最近一次学习 = 更新时间最新的一条进度记录
+        StudyProgress progress = this.lambdaQuery()
+                .eq(StudyProgress::getUserId, userId)
+                .orderByDesc(StudyProgress::getUpdateTime)
+                .orderByDesc(StudyProgress::getId)
+                .last("LIMIT 1")
+                .one();
+        if (progress == null) {
+            return null;
+        }
+        ProgressVO vo = new ProgressVO();
+        vo.setId(progress.getId());
+        vo.setCourseId(progress.getCourseId());
+        vo.setChapterId(progress.getChapterId());
+        vo.setStudyDuration(progress.getStudyDuration());
+        vo.setFinished(progress.getFinished());
+        vo.setUpdateTime(progress.getUpdateTime());
+        Course course = courseService.getById(progress.getCourseId());
+        if (course != null) {
+            vo.setCourseName(course.getName());
+        }
+        CourseChapter chapter = courseChapterService.getById(progress.getChapterId());
+        if (chapter != null) {
+            vo.setChapterTitle(chapter.getTitle());
+        }
+        return vo;
+    }
+
+    @Override
     public List<ProgressVO> listMy(Long userId, Long courseId) {
         LambdaQueryWrapper<StudyProgress> qw = new LambdaQueryWrapper<>();
         qw.eq(StudyProgress::getUserId, userId)

@@ -48,4 +48,12 @@ public class FrontProgressController {
                                        HttpServletRequest request) {
         return Result.ok(studyProgressService.listMy(AuthContext.getUserId(request), courseId));
     }
+
+    /**
+     * 查询用户最近一次学习记录（首页"继续学习"卡片），从未学习返回 data=null
+     */
+    @GetMapping("/latest")
+    public Result<ProgressVO> latest(HttpServletRequest request) {
+        return Result.ok(studyProgressService.latest(AuthContext.getUserId(request)));
+    }
 }

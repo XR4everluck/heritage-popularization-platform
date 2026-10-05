@@ -71,6 +71,7 @@ heritage-teaching-platform
 - [x] **阶段1-1：种子数据批量扩充** —— 新增 29 个非遗项目（共 33 个，覆盖国家级/省级/市级与六大分类，详细内容均 200 字以上）、8 门课程 32 个新章节（全部 37 个章节配真实可播放的B站科普视频）、封面图与轮播图均使用已验证的真实外链，另扩充用户/评论/收藏/学习进度/公告演示数据（`sql/seed_expansion.sql`，可重复执行）
 - [x] **阶段1-2：视频外链适配 + 首页课程入口** —— 课程学习页支持B站外链视频内嵌播放与非B站外链"新窗口打开"兜底、章节列表增加"免费试看"角标；首页新增"精品课程"板块（4 门热门课程卡片，新增 `GET /api/course/hot` 接口）；非遗详情页关联课程显示视频章节标识（视频教学/部分视频/图文课程）；全局 no-referrer 解决B站图床防盗链
 - [x] **阶段2-1：全局国风主题皮肤与字体重构** —— `global.css` 定义全套国风 CSS 变量（朱红/黛青/鎏金/宣纸米白/墨黑/浅暖灰）并映射 Element Plus 主题变量（一处修改全站生效）；正文思源宋体、标题思源黑体（web 字体 + 系统回退）；前台/后台/登录页 Logo 改为印章式红色方框；页面宣纸米白底 + 细微纸张纹理，卡片纯白
+- [x] **阶段2-2：首页交互升级 + 全站卡片风格统一** —— 后端新增 `GET /api/progress/latest`（最近学习记录）与 `GET /api/heritage/recommend`（同分类随机推荐）接口；首页新增搜索框+热门搜索标签（列表页自动搜索）、「继续学习」卡片（跳转并定位章节）、底部「猜你喜欢」板块；新增 HeritageCard/CourseCard/CateIcon 共享组件统一卡片风格（圆角12px/封面160px/hover上浮阴影）；分类导航改为国风线性图标+hover水波纹
 - [x] **阶段2：后端基础框架搭建** —— SpringBoot 2.7.18 + MyBatis-Plus 3.5.3.1 骨架、pom 依赖、application.yml、Result 统一返回、全局异常处理、跨域配置、分页与逻辑删除配置（`docs/02-后端项目骨架说明.md`）
 - [x] **阶段3：实体层 + 数据层 + 业务层** —— 10 张表的 Entity（@TableName/@TableId/@TableField/@TableLogic）、Mapper（BaseMapper）、Service（IService）/ServiceImpl（40 个类，纯 MP 内置方法，无 XML；`docs/03-实体层与业务层说明.md`）
 - [x] **阶段4：后端业务接口层** —— 前台 8 个 + 后台 8 个 Controller（完整 REST 接口）、DTO/VO 分层、BCrypt 注册登录、收藏/进度/评论跨表业务组装（`docs/04-接口层说明.md`）

@@ -62,7 +62,11 @@ onMounted(async () => {
   const chapterRes = await getCourseChapters(route.params.id)
   chapters.value = chapterRes.data
   if (chapters.value.length) {
-    selectChapter(chapters.value[0])
+    // 支持 /course/:id?chapter=:chapterId 定位章节（首页"继续学习"卡片跳转入口）
+    const target = route.query.chapter
+      ? chapters.value.find((c) => c.id === Number(route.query.chapter))
+      : null
+    selectChapter(target || chapters.value[0])
   }
   // 已登录则加载本课程的学习进度
   if (userStore.isLogin) {

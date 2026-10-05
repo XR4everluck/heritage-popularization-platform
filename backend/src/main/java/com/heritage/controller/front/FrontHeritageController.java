@@ -1,6 +1,7 @@
 package com.heritage.controller.front;
 
 import com.heritage.common.Result;
+import com.heritage.entity.HeritageInfo;
 import com.heritage.service.HeritageInfoService;
 import com.heritage.vo.HeritageVO;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import java.util.List;
+
 /**
- * 前台非遗项目接口：分页检索（分类/关键词/级别）、详情、浏览量自增
+ * 前台非遗项目接口：分页检索（分类/关键词/级别）、详情、浏览量自增、同类随机推荐
  */
 @RestController
 @RequestMapping("/api/heritage")
@@ -57,5 +60,28 @@ public class FrontHeritageController {
     public Result<Void> view(@PathVariable Long id) {
         heritageInfoService.increaseViewCount(id);
         return Result.ok();
+    }
+
+    /**
+     * 猜你喜欢：按分类随机推荐非遗项目（仅已发布）。
+     * 传 categoryId 时在同分类内随机（详情页推荐传 excludeId 排除当前项目）；
+     * 不传 categoryId 时从全部项目中随机（首页底部推荐）。
+     *
+     * @param categoryId 分类ID（可空）
+     * @param excludeId  排除的项目ID（可空，详情页传当前项目避免推荐自己）
+     * @param limit      推荐条数，默认 4，限制在 1-8 之间
+     */
+    @GetMapping("/recommend")
+    public Result<List<HeritageInfo>> recommend(@RequestParam(required = false) Long categoryId,
+                                                @RequestParam(required = false) Long excludeId,
+                                                @RequestParam(defaultValue = "4") Integer limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 8));
+        List<HeritageInfo> list = heritageInfoService.lambdaQuery()
+                .isNotNull(HeritageInfo::getPublishTime)
+                .eq(categoryId != null, HeritageInfo::getCategoryId, categoryId)
+                .ne(excludeId != null, HeritageInfo::getId, excludeId)
+                .last("ORDER BY RAND() LIMIT " + safeLimit)
+                .list();
+        return Result.ok(list);
     }
 }

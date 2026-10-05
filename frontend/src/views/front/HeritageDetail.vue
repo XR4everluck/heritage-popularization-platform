@@ -6,9 +6,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getHeritageDetail, addHeritageView, getCourseListByHeritage, getCourseChapters, getCommentPage, postComment,
-         getMyCollections, addCollection, removeCollection } from '../../api/front'
+         getMyCollections, addCollection, removeCollection, getRecommend } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import { defaultCover, coverFallback } from '../../utils/placeholder'
+import CourseCard from '../../components/CourseCard.vue'
+import HeritageCard from '../../components/HeritageCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +20,8 @@ const info = ref(null)
 const courses = ref([])
 // 课程章节视频统计：{ [课程id]: { total, videos } }，用于区分有视频/无视频章节
 const courseStats = ref({})
+// 猜你喜欢：同分类随机推荐（排除当前项目）
+const recommendList = ref([])
 const comments = ref([])
 const commentTotal = ref(0)
 const commentPage = ref(1)
@@ -45,9 +49,20 @@ onMounted(async () => {
   const courseRes = await getCourseListByHeritage(route.params.id)
   courses.value = courseRes.data
   loadCourseStats()
+  loadRecommend()
   loadComments()
   loadCollectState()
 })
+
+/** 猜你喜欢：同分类随机推荐 4 个项目（排除当前项目），失败静默 */
+async function loadRecommend() {
+  try {
+    const res = await getRecommend({ categoryId: info.value.categoryId, excludeId: info.value.id, limit: 4 })
+    recommendList.value = res.data
+  } catch {
+    /* 推荐加载失败不影响主内容 */
+  }
+}
 
 /** 并发拉取各课程的章节列表，统计视频章节数（单课程失败不阻塞） */
 async function loadCourseStats() {
@@ -167,25 +182,28 @@ async function submitComment() {
       <div class="rich-content" v-html="info.content || '暂无详细介绍'"></div>
     </el-card>
 
-    <!-- 关联课程 -->
+    <!-- 关联课程（统一卡片风格，附章节视频统计） -->
     <el-card shadow="never" class="block-card">
       <template #header><b>相关课程（{{ courses.length }}）</b></template>
       <el-empty v-if="!courses.length" description="该项目暂无课程" :image-size="60" />
-      <div v-for="course in courses" :key="course.id" class="course-item"
-           @click="router.push(`/course/${course.id}`)">
-        <img :src="course.cover || defaultCover(course.name, 240, 160)" class="course-cover" />
-        <div class="course-info">
-          <div class="course-name">
-            {{ course.name }}
-            <el-tag v-if="videoLabel(course.id)" size="small" :type="videoLabel(course.id).type" effect="light">
-              {{ videoLabel(course.id).text }}
-            </el-tag>
-          </div>
-          <div class="course-desc">{{ course.summary }}</div>
-          <div class="course-meta">讲师：{{ course.teacher || '-' }} · 总时长 {{ course.duration }} 分钟 · 浏览 {{ course.viewCount }}</div>
-        </div>
-        <el-button type="danger" plain size="small">开始学习</el-button>
-      </div>
+      <el-row :gutter="16" v-else>
+        <el-col v-for="course in courses" :key="course.id" :span="12">
+          <CourseCard :item="{ ...course, chapterCount: courseStats[course.id]?.total }"
+                      :tag="videoLabel(course.id)"
+                      class="related-course" @open="router.push(`/course/${course.id}`)" />
+        </el-col>
+      </el-row>
+    </el-card>
+
+    <!-- 猜你喜欢：同分类随机推荐 -->
+    <el-card shadow="never" class="block-card" v-if="recommendList.length">
+      <template #header><b>猜你喜欢</b></template>
+      <el-row :gutter="16">
+        <el-col v-for="item in recommendList" :key="item.id" :span="6">
+          <HeritageCard :item="{ ...item, categoryName: info.categoryName }"
+                        @open="router.push(`/heritage/${item.id}`)" />
+        </el-col>
+      </el-row>
     </el-card>
 
     <!-- 评论区 -->
@@ -269,45 +287,8 @@ async function submitComment() {
 .block-card {
   margin-bottom: 16px;
 }
-.course-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.course-item:hover {
-  background: #fdf6ec;
-}
-.course-cover {
-  width: 120px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 6px;
-  flex-shrink: 0;
-}
-.course-info {
-  flex: 1;
-}
-.course-name {
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.course-desc {
-  color: #909399;
-  font-size: 13px;
-  margin: 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.course-meta {
-  color: #c0c4cc;
-  font-size: 12px;
+.related-course {
+  margin-bottom: 16px;
 }
 .comment-editor {
   display: flex;

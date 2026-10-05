@@ -85,3 +85,11 @@ export function updateProgress(data) {
 export function getMyProgress(params) {
   return request.get('/api/progress/my', { params })
 }
+
+export function getLatestProgress() {
+  return request.get('/api/progress/latest')
+}
+
+export function getRecommend(params) {
+  return request.get('/api/heritage/recommend', { params })
+}
