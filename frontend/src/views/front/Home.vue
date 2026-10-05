@@ -26,29 +26,41 @@ const noticeDetail = ref(null)
 const noticeVisible = ref(false)
 const keyword = ref('')
 const latest = ref(null)
+const loadFailed = ref(false)
 
 // 热门搜索标签（点击直达列表页并自动搜索）
 const HOT_KEYWORDS = ['昆曲', '剪纸', '皮影戏', '二十四节气']
 
-onMounted(async () => {
-  const [b, c, h, n, courses, recommend] = await Promise.all([
-    getBanners(),
-    getCategoryList(),
-    getHeritagePage({ page: 1, pageSize: 8 }),
-    getNoticePage({ page: 1, pageSize: 5 }),
-    // 热门课程/推荐接口失败不阻塞首页其他板块
-    getHotCourses(4).catch(() => ({ data: [] })),
-    getRecommend({ limit: 4 }).catch(() => ({ data: [] }))
-  ])
-  banners.value = b.data
-  categories.value = c.data
-  hotCourses.value = courses.data
-  heritageList.value = h.data.records
-  recommendList.value = recommend.data
-  notices.value = n.data.records
-  loading.value = false
+onMounted(loadAll)
+
+/** 首屏数据加载：整体失败时展示错误引导（避免骨架屏卡死），支持重试 */
+async function loadAll() {
+  loading.value = true
+  loadFailed.value = false
+  try {
+    const [b, c, h, n, courses, recommend] = await Promise.all([
+      getBanners(),
+      getCategoryList(),
+      getHeritagePage({ page: 1, pageSize: 8 }),
+      getNoticePage({ page: 1, pageSize: 5 }),
+      // 热门课程/推荐接口失败不阻塞首页其他板块
+      getHotCourses(4).catch(() => ({ data: [] })),
+      getRecommend({ limit: 4 }).catch(() => ({ data: [] }))
+    ])
+    banners.value = b.data
+    categories.value = c.data
+    hotCourses.value = courses.data
+    heritageList.value = h.data.records
+    recommendList.value = recommend.data
+    notices.value = n.data.records
+  } catch (e) {
+    // 后端不可用/数据库异常：给出明确提示与重试入口
+    loadFailed.value = true
+  } finally {
+    loading.value = false
+  }
   loadLatest()
-})
+}
 
 /** 加载最近学习记录（仅登录用户；失败静默） */
 async function loadLatest() {
@@ -102,6 +114,14 @@ function goBanner(banner) {
         </template>
       </el-skeleton>
     </div>
+
+    <!-- 后端不可用时的失败引导 -->
+    <el-card v-else-if="loadFailed" shadow="never" class="fail-card">
+      <el-empty description="页面数据加载失败，可能是后端服务或数据库未就绪">
+        <el-button type="danger" @click="loadAll">重新加载</el-button>
+        <el-button @click="router.push('/heritage')">先去非遗博览</el-button>
+      </el-empty>
+    </el-card>
 
     <template v-else>
     <!-- 国风淡入淡出轮播图 -->
@@ -212,6 +232,15 @@ function goBanner(banner) {
 </template>
 
 <style scoped>
+.fail-card {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fail-card :deep(.el-card__body) {
+  width: 100%;
+}
 .section {
   margin-top: 24px;
 }

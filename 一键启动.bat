@@ -69,12 +69,12 @@ if errorlevel 1 goto :connect_fail
 mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% -e "USE %DB_NAME%;" >nul 2>&1
 if errorlevel 1 goto :import_db
 echo   数据库连接正常。
-if "%PWD_FROM_FILE%"=="1" goto :jwt
+if "%PWD_FROM_FILE%"=="1" goto :data_check
 choice /c YN /n /m "  是否记住数据库密码（保存到本目录 .db_secret，已被 git 忽略）？[Y/N]："
-if errorlevel 2 goto :jwt
+if errorlevel 2 goto :data_check
 <nul set /p="%DB_PASSWORD%">.db_secret
 echo   已保存，下次启动不再询问。
-goto :jwt
+goto :data_check
 :connect_fail
 if "%PWD_FROM_FILE%"=="1" (
     echo   [!] 本地保存的密码已失效，请重新输入
@@ -96,11 +96,52 @@ if errorlevel 1 (
     goto :fail
 )
 echo   导入完成。
-if "%PWD_FROM_FILE%"=="1" goto :jwt
+if "%PWD_FROM_FILE%"=="1" goto :data_check
 choice /c YN /n /m "  是否记住数据库密码（保存到本目录 .db_secret，已被 git 忽略）？[Y/N]："
-if errorlevel 2 goto :jwt
+if errorlevel 2 goto :data_check
 <nul set /p="%DB_PASSWORD%">.db_secret
 echo   已保存，下次启动不再询问。
+
+:: ---------- 1.4 数据自检：旧版结构自动升级 / 演示数据自动补齐 ----------
+:data_check
+:: 旧版库检测：缺少 heritage_history 表说明是阶段3-1之前的结构，自动升级（脚本幂等）
+mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='%DB_NAME%' AND table_name='heritage_history';" 2>nul | findstr "^0$" >nul
+if not errorlevel 1 (
+    echo   [!] 检测到旧版数据库结构，自动升级——新增结构化字段与历史节点表...
+    if not exist "sql\upgrade_3_1.sql" (
+        echo   [×] 缺少 sql\upgrade_3_1.sql，无法自动升级
+        goto :fail
+    )
+    mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% --default-character-set=utf8mb4 < "sql\upgrade_3_1.sql"
+    if errorlevel 1 (
+        echo   [×] 结构升级失败，请手动执行 sql\upgrade_3_1.sql 后重试
+        goto :fail
+    )
+    echo   结构升级完成。
+)
+:: 种子数据检测：非遗项目过少或历史节点为空时自动补导（seed_expansion 幂等可重复）
+set "NEED_SEED=0"
+for /f "delims=" %%a in ('mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% -N -e "SELECT COUNT(*) FROM %DB_NAME%.heritage_info;" 2^>nul') do set "HCNT=%%a"
+if not defined HCNT set "HCNT=99"
+if !HCNT! LSS 5 set "NEED_SEED=1"
+for /f "delims=" %%a in ('mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% -N -e "SELECT COUNT(*) FROM %DB_NAME%.heritage_history;" 2^>nul') do set "HHCNT=%%a"
+if not defined HHCNT set "HHCNT=99"
+if !HHCNT! LSS 1 set "NEED_SEED=1"
+if "!NEED_SEED!"=="1" (
+    if exist "sql\seed_expansion.sql" (
+        echo   [!] 检测到演示数据未扩充，自动导入批量种子数据——33个非遗项目/10门课程...
+        mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% --default-character-set=utf8mb4 < "sql\seed_expansion.sql"
+        if errorlevel 1 (
+            echo   [×] 种子数据导入失败，可手动执行 sql\seed_expansion.sql 后重试
+            goto :fail
+        )
+        echo   种子数据导入完成。
+    ) else (
+        echo   [!] 未找到 sql\seed_expansion.sql，跳过种子数据导入
+    )
+)
+set "NEED_SEED=" & set "HCNT=" & set "HHCNT="
+goto :jwt
 
 :: ---------- 1.5 JWT 密钥（首次自动生成并保存，保证重启后登录态不失效） ----------
 :jwt
