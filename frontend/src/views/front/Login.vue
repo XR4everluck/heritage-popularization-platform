@@ -89,7 +89,7 @@ async function handleRegister() {
   <div class="login-page">
     <div class="login-card">
       <div class="card-head">
-        <el-icon :size="30" color="#c0392b"><Collection /></el-icon>
+        <span class="logo-seal"><el-icon :size="22"><Collection /></el-icon></span>
         <h2>非遗知识教学平台</h2>
         <p>登录后可收藏、评论和学习课程</p>
       </div>
@@ -148,6 +148,11 @@ async function handleRegister() {
 .card-head {
   text-align: center;
   margin-bottom: 12px;
+}
+.card-head .logo-seal {
+  margin: 0 auto 4px;
+  width: 42px;
+  height: 42px;
 }
 .card-head h2 {
   margin: 6px 0;

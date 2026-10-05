@@ -18,7 +18,7 @@ const activeMenu = computed(() => router.currentRoute.value.path)
     <el-header class="header">
       <div class="header-inner">
         <div class="logo" @click="router.push('/')">
-          <el-icon :size="26" color="#c0392b"><Collection /></el-icon>
+          <span class="logo-seal"><el-icon :size="22"><Collection /></el-icon></span>
           <span class="logo-text">非遗知识教学平台</span>
         </div>
         <el-menu mode="horizontal" :default-active="activeMenu" :ellipsis="false" router class="nav-menu">
@@ -65,8 +65,8 @@ const activeMenu = computed(() => router.currentRoute.value.path)
   min-height: 100vh;
 }
 .header {
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background: var(--gq-card);
+  border-bottom: 1px solid var(--gq-border);
   padding: 0;
   position: sticky;
   top: 0;
@@ -82,14 +82,16 @@ const activeMenu = computed(() => router.currentRoute.value.path)
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
   margin-right: 40px;
 }
 .logo-text {
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 700;
-  color: #303133;
+  color: var(--gq-text);
+  letter-spacing: 1px;
 }
 .nav-menu {
   flex: 1;
@@ -116,11 +118,11 @@ const activeMenu = computed(() => router.currentRoute.value.path)
 }
 .footer {
   text-align: center;
-  color: #909399;
+  color: var(--gq-text-secondary);
   font-size: 13px;
   height: 60px;
   line-height: 60px;
-  border-top: 1px solid #e4e7ed;
-  background: #fff;
+  border-top: 1px solid var(--gq-border);
+  background: var(--gq-card);
 }
 </style>

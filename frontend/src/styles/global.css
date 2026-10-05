@@ -1,4 +1,57 @@
-/* 全局基础样式 */
+/* ============================================================
+   非遗知识教学平台 —— 全局国风主题样式
+   ============================================================
+   主题约定：
+   - 所有颜色均通过下方 CSS 变量引用，修改 :root 中变量即可全站生效；
+   - Element Plus 组件主色通过 --el-color-* 变量映射到主题色板；
+   - 正文使用思源宋体（回退 宋体），标题使用思源黑体加粗（回退 微软雅黑）；
+   - 页面背景为宣纸米白 + 细微纸张纹理，卡片为纯白。
+   ============================================================ */
+
+:root {
+  /* ---------- 国风色板 ---------- */
+  --gq-primary: #c0392b;        /* 主色：朱红 */
+  --gq-primary-dark: #a02c20;   /* 主色深（hover/active） */
+  --gq-primary-light-3: #d35d52; /* 主色浅 30% */
+  --gq-primary-light-5: #e08d85; /* 主色浅 50% */
+  --gq-primary-light-7: #ecbcb7; /* 主色浅 70% */
+  --gq-primary-light-8: #f3d5d2; /* 主色浅 80% */
+  --gq-primary-light-9: #f9ebe9; /* 主色浅 90%（浅底） */
+  --gq-secondary: #2c3e50;      /* 辅助色：黛青 */
+  --gq-gold: #d4af37;           /* 点缀色：鎏金 */
+  --gq-bg: #f7f4ee;             /* 页面背景：宣纸米白 */
+  --gq-text: #1a1a1a;           /* 主文字：墨黑 */
+  --gq-text-secondary: #666666; /* 次文字：深灰 */
+  --gq-border: #e8e3d9;         /* 边框：浅暖灰 */
+  --gq-card: #ffffff;           /* 卡片背景：纯白 */
+
+  /* ---------- 字体 ---------- */
+  --font-body: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', '宋体', serif;
+  --font-heading: 'Noto Sans SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', '微软雅黑', sans-serif;
+
+  /* ---------- Element Plus 主题映射（一处修改，全站生效） ---------- */
+  --el-color-primary: var(--gq-primary);
+  --el-color-primary-dark-2: var(--gq-primary-dark);
+  --el-color-primary-light-3: var(--gq-primary-light-3);
+  --el-color-primary-light-5: var(--gq-primary-light-5);
+  --el-color-primary-light-7: #ecbcb7;
+  --el-color-primary-light-8: var(--gq-primary-light-8);
+  --el-color-primary-light-9: var(--gq-primary-light-9);
+  --el-bg-color-page: var(--gq-bg);
+  --el-fill-color-light: #faf8f3;
+  --el-fill-color-lighter: #fbfaf7;
+  --el-text-color-primary: var(--gq-text);
+  --el-text-color-regular: var(--gq-text-secondary);
+  --el-text-color-secondary: #8a8578;
+  --el-border-color: var(--gq-border);
+  --el-border-color-light: var(--gq-border);
+  --el-border-color-lighter: #efeae0;
+  --el-font-family: var(--font-body);
+}
+
+/* ============================================================
+   基础样式
+   ============================================================ */
 * {
   margin: 0;
   padding: 0;
@@ -9,14 +62,26 @@ html,
 body,
 #app {
   height: 100%;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
-  background-color: #f5f7fa;
-  color: #303133;
+  font-family: var(--font-body);
+  color: var(--gq-text);
+}
+
+/* 宣纸米白页面底色 + 细微纸张纹理（feTurbulence 噪点，极低透明度） */
+body {
+  background-color: var(--gq-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
 a {
   text-decoration: none;
   color: inherit;
+}
+
+/* 标题统一：思源黑体加粗 */
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--gq-text);
 }
 
 /* 富文本内容展示（非遗详情/公告内容） */
@@ -27,4 +92,62 @@ a {
 
 .rich-content img {
   max-width: 100%;
+}
+
+/* ============================================================
+   Element Plus 组件主题微调（不改结构，仅样式）
+   ============================================================ */
+
+/* 卡片：纯白背景 + 暖色细边框 + 极淡纸张纹理 */
+.el-card {
+  background-color: var(--gq-card);
+  border-color: var(--gq-border);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* 弹窗 / 消息框：白底 + 墨黑标题 */
+.el-dialog,
+.el-message-box {
+  background-color: var(--gq-card);
+}
+.el-dialog__title,
+.el-message-box__title {
+  color: var(--gq-text);
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* 顶部导航菜单：选中态朱红加粗 */
+.el-menu--horizontal .el-menu-item.is-active {
+  color: var(--gq-primary) !important;
+  font-weight: 700;
+}
+
+/* 页面通用分页器选中色跟随主色（EP 已由变量接管，此处统一圆角） */
+.el-pagination.is-background .el-pager li.is-active {
+  background-color: var(--gq-primary);
+}
+
+/* 标签（el-tag）浅色底更贴宣纸风格 */
+.el-tag--light {
+  border-color: var(--gq-border);
+}
+
+/* 印章式 Logo 方框（前台顶栏 / 后台侧栏 / 登录卡通用） */
+.logo-seal {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--gq-primary);
+  color: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55), 0 1px 4px rgba(192, 57, 43, 0.35);
+}
+
+/* 鎏金点缀：分隔线 hover 等场景可用 */
+.gq-gold {
+  color: var(--gq-gold);
 }

@@ -25,11 +25,11 @@ async function handleLogout() {
     <!-- 左侧菜单 -->
     <el-aside width="210px" class="aside">
       <div class="aside-logo">
-        <el-icon :size="22"><Collection /></el-icon>
+        <span class="logo-seal aside-seal"><el-icon :size="18"><Collection /></el-icon></span>
         <span>非遗平台后台</span>
       </div>
-      <el-menu :default-active="activeMenu" router background-color="#001529" text-color="#c8c9cc"
-               active-text-color="#fff" class="aside-menu">
+      <el-menu :default-active="activeMenu" router background-color="#2c3e50" text-color="#c8c9cc"
+               active-text-color="#ffffff" class="aside-menu">
         <el-menu-item index="/admin/dashboard"><el-icon><DataAnalysis /></el-icon>数据统计</el-menu-item>
         <el-menu-item index="/admin/category"><el-icon><Menu /></el-icon>分类管理</el-menu-item>
         <el-menu-item index="/admin/heritage"><el-icon><Collection /></el-icon>非遗项目管理</el-menu-item>
@@ -73,31 +73,38 @@ async function handleLogout() {
   height: 100vh;
 }
 .aside {
-  background: #001529;
+  background: var(--gq-secondary);
 }
 .aside-logo {
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   color: #fff;
+  font-family: var(--font-heading);
   font-size: 16px;
   font-weight: 700;
+}
+.aside-seal {
+  width: 30px;
+  height: 30px;
 }
 .aside-menu {
   border-right: none;
 }
 .topbar {
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background: var(--gq-card);
+  border-bottom: 1px solid var(--gq-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .page-title {
+  font-family: var(--font-heading);
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--gq-text);
 }
 .topbar-right {
   display: flex;
@@ -112,7 +119,7 @@ async function handleLogout() {
   outline: none;
 }
 .content {
-  background: #f0f2f5;
+  background: var(--gq-bg);
   overflow-y: auto;
 }
 </style>
