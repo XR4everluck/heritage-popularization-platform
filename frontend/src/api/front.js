@@ -21,6 +21,10 @@ export function getCourseListByHeritage(heritageId) {
   return request.get('/api/course/list', { params: { heritageId } })
 }
 
+export function getHotCourses(limit = 4) {
+  return request.get('/api/course/hot', { params: { limit } })
+}
+
 export function getCourseDetail(id) {
   return request.get(`/api/course/${id}`)
 }

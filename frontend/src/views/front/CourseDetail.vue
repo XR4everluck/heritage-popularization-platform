@@ -33,6 +33,14 @@ const biliEmbed = computed(() => {
   return `https://player.bilibili.com/player.html?bvid=${bv[0]}&page=${page ? page[1] : 1}&autoplay=0&danmaku=0&high_quality=1`
 })
 
+// 非 B站的 http(s) 外链且不是直链媒体文件（mp4 等）：原生 video 大概率无法解码，
+// 播放器下方给出"新窗口打开"兜底入口
+const isExternalPage = computed(() => {
+  const url = currentChapter.value?.videoUrl || ''
+  if (!/^https?:\/\//i.test(url) || isBili.value) return false
+  return !/\.(mp4|webm|ogg|ogv|mov|mkv|mp3|wav|m4a)(\?.*)?$/i.test(url)
+})
+
 const progressOfChapter = computed(() => {
   const map = {}
   myProgress.value.forEach((p) => (map[p.chapterId] = p))
@@ -138,11 +146,17 @@ function onVideoEnded() {
         <iframe v-if="currentChapter?.videoUrl && isBili" :key="'bili-' + currentChapter.id"
                 :src="biliEmbed" scrolling="no" frameborder="0" allowfullscreen
                 class="player bili-player"></iframe>
+        <!-- 其他 http(s) 外链：直链媒体走原生 video，网页外链提供新窗口打开兜底 -->
         <video v-else-if="currentChapter?.videoUrl" ref="videoRef" :key="currentChapter.id"
-               :src="currentChapter.videoUrl" controls autoplay class="player"
+               :src="currentChapter.videoUrl" controls class="player"
                @timeupdate="onTimeUpdate" @ended="onVideoEnded" />
         <div v-else class="player-placeholder">
           <el-empty :description="currentChapter ? '本章节视频暂未上传，可先阅读图文讲义' : '暂无章节内容'" :image-size="80" />
+        </div>
+        <!-- 兜底提示（独立于上方 v-if 链，避免打断条件分支） -->
+        <div v-if="currentChapter?.videoUrl && isExternalPage" class="external-tip">
+          本章节为外部视频链接，若上方播放器无法解码，
+          <el-link type="danger" :href="currentChapter.videoUrl" target="_blank" class="external-link">在新窗口打开观看&nbsp;<el-icon><TopRight /></el-icon></el-link>
         </div>
         <div v-if="currentChapter?.content" class="rich-content chapter-content" v-html="currentChapter.content"></div>
         <div class="study-actions">
@@ -158,6 +172,7 @@ function onVideoEnded() {
              :class="{ active: currentChapter?.id === chapter.id }" @click="selectChapter(chapter)">
           <span class="chapter-index">{{ index + 1 }}</span>
           <span class="chapter-title">{{ chapter.title }}</span>
+          <el-tag v-if="index === 0" size="small" type="success" effect="light">免费试看</el-tag>
           <el-tag v-if="progressOfChapter[chapter.id]?.finished" size="small" type="success">已完成</el-tag>
           <span v-else-if="progressOfChapter[chapter.id]" class="chapter-duration">
             {{ progressOfChapter[chapter.id].studyDuration }} 分钟
@@ -225,6 +240,16 @@ function onVideoEnded() {
   aspect-ratio: 16 / 9;
   height: auto;
   border: 0;
+}
+/* 外链视频兜底提示 */
+.external-tip {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #909399;
+}
+.external-link {
+  vertical-align: middle;
+  font-size: 13px;
 }
 .player-placeholder {
   height: 300px;

@@ -5,7 +5,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getHeritageDetail, addHeritageView, getCourseListByHeritage, getCommentPage, postComment,
+import { getHeritageDetail, addHeritageView, getCourseListByHeritage, getCourseChapters, getCommentPage, postComment,
          getMyCollections, addCollection, removeCollection } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import { defaultCover, coverFallback } from '../../utils/placeholder'
@@ -16,6 +16,8 @@ const userStore = useUserStore()
 
 const info = ref(null)
 const courses = ref([])
+// 课程章节视频统计：{ [课程id]: { total, videos } }，用于区分有视频/无视频章节
+const courseStats = ref({})
 const comments = ref([])
 const commentTotal = ref(0)
 const commentPage = ref(1)
@@ -39,12 +41,36 @@ onMounted(async () => {
   info.value = detailRes.data
   // 浏览量自增（不阻塞页面）
   addHeritageView(route.params.id).catch(() => {})
-  // 关联课程
+  // 关联课程 + 各课程章节的视频统计
   const courseRes = await getCourseListByHeritage(route.params.id)
   courses.value = courseRes.data
+  loadCourseStats()
   loadComments()
   loadCollectState()
 })
+
+/** 并发拉取各课程的章节列表，统计视频章节数（单课程失败不阻塞） */
+async function loadCourseStats() {
+  const results = await Promise.all(courses.value.map((course) =>
+    getCourseChapters(course.id)
+      .then((res) => ({ id: course.id, chapters: res.data }))
+      .catch(() => ({ id: course.id, chapters: [] }))
+  ))
+  const stats = {}
+  results.forEach(({ id, chapters }) => {
+    stats[id] = { total: chapters.length, videos: chapters.filter((c) => c.videoUrl).length }
+  })
+  courseStats.value = stats
+}
+
+/** 课程视频标识文案：全部有视频 / 部分有视频 / 暂无视频 */
+function videoLabel(courseId) {
+  const stat = courseStats.value[courseId]
+  if (!stat || !stat.total) return null
+  if (stat.videos === 0) return { text: `图文课程 · ${stat.total} 章`, type: 'info' }
+  if (stat.videos === stat.total) return { text: `视频教学 · ${stat.total} 章`, type: 'success' }
+  return { text: `视频 ${stat.videos}/${stat.total} 章`, type: 'warning' }
+}
 
 async function loadComments() {
   const res = await getCommentPage({ heritageId: route.params.id, page: commentPage.value, pageSize: 10 })
@@ -149,7 +175,12 @@ async function submitComment() {
            @click="router.push(`/course/${course.id}`)">
         <img :src="course.cover || defaultCover(course.name, 240, 160)" class="course-cover" />
         <div class="course-info">
-          <div class="course-name">{{ course.name }}</div>
+          <div class="course-name">
+            {{ course.name }}
+            <el-tag v-if="videoLabel(course.id)" size="small" :type="videoLabel(course.id).type" effect="light">
+              {{ videoLabel(course.id).text }}
+            </el-tag>
+          </div>
           <div class="course-desc">{{ course.summary }}</div>
           <div class="course-meta">讲师：{{ course.teacher || '-' }} · 总时长 {{ course.duration }} 分钟 · 浏览 {{ course.viewCount }}</div>
         </div>
@@ -262,6 +293,9 @@ async function submitComment() {
 }
 .course-name {
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .course-desc {
   color: #909399;

@@ -1,32 +1,43 @@
 <script setup>
 /**
- * 首页：轮播图 + 分类导航 + 推荐非遗 + 最新公告
+ * 首页：轮播图 + 分类导航 + 精品课程 + 推荐非遗 + 最新公告
  */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getBanners, getCategoryList, getHeritagePage, getNoticePage } from '../../api/front'
+import { getBanners, getCategoryList, getHeritagePage, getNoticePage, getNoticeDetail, getHotCourses } from '../../api/front'
 import { defaultCover, coverFallback } from '../../utils/placeholder'
 
 const router = useRouter()
 const banners = ref([])
 const categories = ref([])
+const hotCourses = ref([])
 const heritageList = ref([])
 const notices = ref([])
 const noticeDetail = ref(null)
 const noticeVisible = ref(false)
 
 onMounted(async () => {
-  const [b, c, h, n] = await Promise.all([
+  const [b, c, h, n, courses] = await Promise.all([
     getBanners(),
     getCategoryList(),
     getHeritagePage({ page: 1, pageSize: 8 }),
-    getNoticePage({ page: 1, pageSize: 5 })
+    getNoticePage({ page: 1, pageSize: 5 }),
+    // 热门课程接口失败不阻塞首页其他板块
+    getHotCourses(4).catch(() => ({ data: [] }))
   ])
   banners.value = b.data
   categories.value = c.data
+  hotCourses.value = courses.data
   heritageList.value = h.data.records
   notices.value = n.data.records
 })
+
+/** 总时长展示：超过 60 分钟换算为"小时+分钟" */
+function formatDuration(minutes) {
+  if (!minutes) return '暂无时长'
+  if (minutes < 60) return `${minutes} 分钟`
+  return `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分钟`
+}
 
 /** 查看公告详情（弹窗展示） */
 async function showNotice(notice) {
@@ -68,6 +79,29 @@ function goBanner(banner) {
           <span>{{ cate.name }}</span>
         </div>
       </div>
+    </div>
+
+    <!-- 精品课程（非遗博览板块上方） -->
+    <div class="section" v-if="hotCourses.length">
+      <h3 class="section-title">精品课程</h3>
+      <el-row :gutter="16">
+        <el-col v-for="course in hotCourses" :key="course.id" :span="6">
+          <el-card shadow="hover" class="heritage-card" :body-style="{ padding: 0 }"
+                   @click="router.push(`/course/${course.id}`)">
+            <div class="course-cover-wrap">
+              <img :src="course.cover || defaultCover(course.name)" class="card-cover" />
+              <span class="course-duration"><el-icon><VideoCamera /></el-icon>{{ formatDuration(course.duration) }}</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name course-name-ellipsis" :title="course.name">{{ course.name }}</div>
+              <div class="card-meta">
+                <span class="course-teacher" :title="course.teacher">讲师：{{ course.teacher || '-' }}</span>
+                <span><el-icon><View /></el-icon>{{ course.viewCount }}</span>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
     </div>
 
     <div class="home-body">
@@ -196,6 +230,34 @@ function goBanner(banner) {
   height: 150px;
   object-fit: cover;
   display: block;
+}
+/* 精品课程卡片 */
+.course-cover-wrap {
+  position: relative;
+}
+.course-duration {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.course-name-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.course-teacher {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .card-body {
   padding: 12px;

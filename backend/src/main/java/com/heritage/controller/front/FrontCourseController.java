@@ -45,6 +45,22 @@ public class FrontCourseController {
     }
 
     /**
+     * 热门课程（按浏览量倒序，前台首页"精品课程"板块展示）
+     *
+     * @param limit 返回条数，默认 4，限制在 1-8 之间
+     */
+    @GetMapping("/hot")
+    public Result<List<Course>> hot(@RequestParam(defaultValue = "4") Integer limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 8));
+        return Result.ok(courseService.lambdaQuery()
+                .isNotNull(Course::getPublishTime)
+                .orderByDesc(Course::getViewCount)
+                .orderByDesc(Course::getId)
+                .last("LIMIT " + safeLimit)
+                .list());
+    }
+
+    /**
      * 查询课程详情
      */
     @GetMapping("/{id}")
