@@ -204,9 +204,12 @@ async function removeChapter(row) {
       <el-table :data="chapters" stripe>
         <el-table-column prop="sort" label="序号" width="60" align="center" />
         <el-table-column prop="title" label="章节标题" min-width="180" show-overflow-tooltip />
-        <el-table-column label="视频" width="80" align="center">
+        <el-table-column label="视频" width="110" align="center">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.videoUrl ? 'success' : 'info'">{{ row.videoUrl ? '已上传' : '未上传' }}</el-tag>
+            <el-tag v-if="row.videoUrl" size="small" :type="/bilibili|b23\.tv/.test(row.videoUrl) ? 'warning' : 'success'">
+              {{ /bilibili|b23\.tv/.test(row.videoUrl) ? '外链' : '已上传' }}
+            </el-tag>
+            <el-tag v-else size="small" type="info">未上传</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
@@ -222,7 +225,18 @@ async function removeChapter(row) {
         <el-form ref="chapterFormRef" :model="chapterForm" :rules="chapterRules" label-width="90px">
           <el-form-item label="章节标题" prop="title"><el-input v-model="chapterForm.title" maxlength="100" /></el-form-item>
           <el-form-item label="排序号"><el-input-number v-model="chapterForm.sort" :min="0" /></el-form-item>
-          <el-form-item label="章节视频"><FileUpload v-model="chapterForm.videoUrl" type="video" width="280px" height="150px" /></el-form-item>
+          <el-form-item label="章节视频">
+            <div style="width: 100%">
+              <FileUpload v-model="chapterForm.videoUrl" type="video" width="280px" height="150px" />
+              <el-input v-model="chapterForm.videoUrl" clearable placeholder="或直接粘贴视频外链地址"
+                        style="margin-top: 8px">
+                <template #prepend>外链</template>
+              </el-input>
+              <div style="color: #909399; font-size: 12px; margin-top: 4px">
+                支持上传本地视频或粘贴外链（B站视频前台自动内嵌播放，mp4 直链由播放器直接播放）
+              </div>
+            </div>
+          </el-form-item>
           <el-form-item label="图文讲义"><el-input v-model="chapterForm.content" type="textarea" :rows="4" /></el-form-item>
         </el-form>
         <template #footer>

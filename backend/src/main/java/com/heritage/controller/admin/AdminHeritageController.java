@@ -3,8 +3,10 @@ package com.heritage.controller.admin;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.heritage.common.Result;
 import com.heritage.common.ResultCode;
+import com.heritage.entity.HeritageHistory;
 import com.heritage.entity.HeritageInfo;
 import com.heritage.exception.BusinessException;
+import com.heritage.service.HeritageHistoryService;
 import com.heritage.service.HeritageInfoService;
 import com.heritage.vo.HeritageVO;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminHeritageController {
 
     private final HeritageInfoService heritageInfoService;
+
+    private final HeritageHistoryService heritageHistoryService;
 
     /**
      * 分页查询非遗项目列表（含未发布，支持分类/关键词/级别筛选）
@@ -69,11 +73,15 @@ public class AdminHeritageController {
     }
 
     /**
-     * 删除非遗项目（逻辑删除；其下课程/收藏/评论数据保留，前台自动不可见）
+     * 删除非遗项目（逻辑删除；其下课程/收藏/评论数据保留，前台自动不可见）。
+     * 历史节点为从属内容数据且无逻辑删除标记，随项目一并物理清理，避免遗留孤儿数据。
      */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         heritageInfoService.removeById(id);
+        heritageHistoryService.lambdaUpdate()
+                .eq(HeritageHistory::getHeritageId, id)
+                .remove();
         return Result.ok();
     }
 }

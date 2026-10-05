@@ -18,6 +18,14 @@ export const heritageApi = {
   remove: (id) => request.delete(`/api/admin/heritage/${id}`)
 }
 
+// 非遗历史节点管理
+export const historyApi = {
+  listByHeritage: (heritageId) => request.get('/api/admin/history/list', { params: { heritageId } }),
+  add: (data) => request.post('/api/admin/history', data),
+  update: (data) => request.put('/api/admin/history', data),
+  remove: (id) => request.delete(`/api/admin/history/${id}`)
+}
+
 // 课程与章节管理
 export const courseApi = {
   page: (params) => request.get('/api/admin/course/page', { params }),

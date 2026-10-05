@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.heritage.common.Result;
 import com.heritage.common.ResultCode;
 import com.heritage.entity.HeritageCategory;
+import com.heritage.entity.HeritageInfo;
 import com.heritage.exception.BusinessException;
 import com.heritage.service.HeritageCategoryService;
+import com.heritage.service.HeritageInfoService;
 import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminCategoryController {
 
     private final HeritageCategoryService heritageCategoryService;
+
+    private final HeritageInfoService heritageInfoService;
 
     /**
      * 分页查询分类列表
@@ -69,10 +73,16 @@ public class AdminCategoryController {
     }
 
     /**
-     * 删除分类（逻辑删除；建议先确认分类下无非遗项目）
+     * 删除分类（逻辑删除；分类下仍有非遗项目时阻止删除并提示数量，防止项目悬空）
      */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        long inUse = heritageInfoService.lambdaQuery()
+                .eq(HeritageInfo::getCategoryId, id)
+                .count();
+        if (inUse > 0) {
+            throw new BusinessException("该分类下还有 " + inUse + " 个非遗项目，请先移出或删除后再删除分类");
+        }
         heritageCategoryService.removeById(id);
         return Result.ok();
     }

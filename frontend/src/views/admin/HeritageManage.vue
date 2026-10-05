@@ -5,7 +5,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onBeforeUnmount } from 'vue'
-import { heritageApi, categoryApi } from '../../api/admin'
+import { heritageApi, categoryApi, historyApi } from '../../api/admin'
 import FileUpload from '../../components/FileUpload.vue'
 import { defaultCover } from '../../utils/placeholder'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
@@ -21,13 +21,64 @@ const saving = ref(false)
 const formRef = ref()
 const form = reactive({
   id: null, categoryId: null, name: '', level: '国家级', region: '', inheritor: '',
-  summary: '', content: '', coverImage: '', publishTime: null
+  summary: '', content: '', coverImage: '', publishTime: null,
+  originAge: '', distributionArea: '', representativeWorks: '', endangerLevel: '状况良好'
 })
 
 const rules = {
   name: [{ required: true, message: '请输入非遗名称', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   level: [{ required: true, message: '请选择级别', trigger: 'change' }]
+}
+
+// ---------- 历史节点管理 ----------
+const historyDrawer = ref(false)
+const historyProject = ref(null)
+const historyList = ref([])
+const historyDialog = ref(false)
+const historySaving = ref(false)
+const historyForm = reactive({ id: null, year: '', event: '', description: '' })
+
+async function openHistory(row) {
+  historyProject.value = row
+  historyDrawer.value = true
+  await loadHistory()
+}
+
+async function loadHistory() {
+  const res = await historyApi.listByHeritage(historyProject.value.id)
+  historyList.value = res.data
+}
+
+function openHistoryAdd() {
+  Object.assign(historyForm, { id: null, year: '', event: '', description: '' })
+  historyDialog.value = true
+}
+
+function openHistoryEdit(row) {
+  Object.assign(historyForm, row)
+  historyDialog.value = true
+}
+
+async function saveHistory() {
+  if (!historyForm.event?.trim()) return ElMessage.warning('请输入事件标题')
+  historySaving.value = true
+  try {
+    const payload = { ...historyForm, heritageId: historyProject.value.id }
+    historyForm.id ? await historyApi.update(payload) : await historyApi.add(payload)
+    ElMessage.success('保存成功')
+    historyDialog.value = false
+    loadHistory()
+  } finally {
+    historySaving.value = false
+  }
+}
+
+async function removeHistory(row) {
+  await ElMessageBox.confirm(`确定删除历史节点【${row.year} ${row.event}】吗？`, '提示', { type: 'warning' })
+  await historyApi.remove(row.id)
+  ElMessage.success('已删除')
+  loadHistory()
 }
 
 // 富文本编辑器实例（对话框关闭时销毁，防止内存泄漏）
@@ -58,7 +109,8 @@ async function loadData() {
 function openAdd() {
   Object.assign(form, {
     id: null, categoryId: null, name: '', level: '国家级', region: '', inheritor: '',
-    summary: '', content: '', coverImage: '', publishTime: null
+    summary: '', content: '', coverImage: '', publishTime: null,
+    originAge: '', distributionArea: '', representativeWorks: '', endangerLevel: '状况良好'
   })
   dialogVisible.value = true
 }
@@ -121,14 +173,23 @@ async function remove(row) {
       </el-table-column>
       <el-table-column prop="categoryName" label="分类" width="110" />
       <el-table-column prop="region" label="地区" min-width="120" show-overflow-tooltip />
+      <el-table-column label="濒危程度" width="100">
+        <template #default="{ row }">
+          <el-tag v-if="row.endangerLevel" size="small"
+                  :type="row.endangerLevel === '濒危' ? 'danger' : row.endangerLevel === '急需保护' ? 'danger' : row.endangerLevel === '脆弱' ? 'warning' : 'success'"
+                  effect="plain">{{ row.endangerLevel }}</el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="viewCount" label="浏览" width="80" align="center" />
       <el-table-column prop="collectionCount" label="收藏" width="80" align="center" />
       <el-table-column prop="publishTime" label="发布时间" width="170">
         <template #default="{ row }">{{ row.publishTime || '未发布' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
           <el-button size="small" type="primary" plain @click="openEdit(row)">编辑</el-button>
+          <el-button size="small" type="warning" plain @click="openHistory(row)">历史</el-button>
           <el-button size="small" type="danger" plain @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
@@ -171,6 +232,28 @@ async function remove(row) {
             <el-form-item label="传承人"><el-input v-model="form.inheritor" maxlength="50" /></el-form-item>
           </el-col>
         </el-row>
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="起源年代"><el-input v-model="form.originAge" maxlength="50" placeholder="如：唐代 / 1906年" /></el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="濒危程度">
+              <el-select v-model="form.endangerLevel">
+                <el-option label="濒危" value="濒危" />
+                <el-option label="急需保护" value="急需保护" />
+                <el-option label="脆弱" value="脆弱" />
+                <el-option label="状况良好" value="状况良好" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="分布地区"><el-input v-model="form.distributionArea" maxlength="255" /></el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="代表作品">
+          <el-input v-model="form.representativeWorks" maxlength="500"
+                    placeholder="多个作品用、分隔，如：《牡丹亭》《长生殿》" />
+        </el-form-item>
         <el-form-item label="封面图片"><FileUpload v-model="form.coverImage" type="image" /></el-form-item>
         <el-form-item label="简介"><el-input v-model="form.summary" type="textarea" :rows="2" maxlength="500" /></el-form-item>
         <el-form-item label="详细介绍">
@@ -190,6 +273,45 @@ async function remove(row) {
         <el-button type="danger" :loading="saving" @click="save">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 历史节点管理抽屉 -->
+    <el-drawer v-model="historyDrawer" :title="`历史节点 · ${historyProject?.name || ''}`" size="560px">
+      <div style="margin-bottom: 12px">
+        <el-button type="primary" plain size="small" @click="openHistoryAdd">
+          <el-icon><Plus /></el-icon>&nbsp;新增节点
+        </el-button>
+      </div>
+      <el-timeline v-if="historyList.length">
+        <el-timeline-item v-for="node in historyList" :key="node.id" :timestamp="node.year" placement="top">
+          <el-card shadow="never" :body-style="{ padding: '10px 14px' }">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px">
+              <div style="flex: 1; min-width: 0">
+                <b>{{ node.event }}</b>
+                <div style="color: #909399; font-size: 13px; margin-top: 4px">{{ node.description }}</div>
+              </div>
+              <div style="flex-shrink: 0">
+                <el-button size="small" text type="primary" @click="openHistoryEdit(node)">编辑</el-button>
+                <el-button size="small" text type="danger" @click="removeHistory(node)">删除</el-button>
+              </div>
+            </div>
+          </el-card>
+        </el-timeline-item>
+      </el-timeline>
+      <el-empty v-else description="暂无历史节点" :image-size="70" />
+
+      <!-- 节点编辑对话框 -->
+      <el-dialog v-model="historyDialog" :title="historyForm.id ? '编辑历史节点' : '新增历史节点'" width="460px" append-to-body>
+        <el-form label-width="80px">
+          <el-form-item label="年代" required><el-input v-model="historyForm.year" maxlength="30" placeholder="如：唐代 / 1955年" /></el-form-item>
+          <el-form-item label="事件" required><el-input v-model="historyForm.event" maxlength="200" /></el-form-item>
+          <el-form-item label="描述"><el-input v-model="historyForm.description" type="textarea" :rows="3" maxlength="500" /></el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="historyDialog = false">取消</el-button>
+          <el-button type="danger" :loading="historySaving" @click="saveHistory">保存</el-button>
+        </template>
+      </el-dialog>
+    </el-drawer>
   </el-card>
 </template>
 
