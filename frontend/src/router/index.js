@@ -39,7 +39,10 @@ const routes = [
       { path: 'comment', name: 'commentManage', component: () => import('../views/admin/CommentManage.vue'), meta: { title: '评论管理' } },
       { path: 'banner', name: 'bannerManage', component: () => import('../views/admin/BannerManage.vue'), meta: { title: '轮播图管理' } },
       { path: 'notice', name: 'noticeManage', component: () => import('../views/admin/NoticeManage.vue'), meta: { title: '公告管理' } },
-      { path: 'inheritor', name: 'inheritorManage', component: () => import('../views/admin/InheritorManage.vue'), meta: { title: '传承人管理' } }
+      { path: 'inheritor', name: 'inheritorManage', component: () => import('../views/admin/InheritorManage.vue'), meta: { title: '传承人管理' } },
+      { path: 'quiz', name: 'quizManage', component: () => import('../views/admin/QuizManage.vue'), meta: { title: '题库管理' } },
+      { path: 'heritage-tip', name: 'heritageTipManage', component: () => import('../views/admin/HeritageTipManage.vue'), meta: { title: '冷知识管理' } },
+      { path: 'heritage-news', name: 'heritageNewsManage', component: () => import('../views/admin/HeritageNewsManage.vue'), meta: { title: '科普快讯管理' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

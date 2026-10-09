@@ -1,9 +1,8 @@
 <script setup>
 /**
- * 非遗小测验答题弹窗：5道题逐题作答，答完显示得分和解析
+ * 非遗小测验答题弹窗：逐题作答，答完显示得分、对错与解析
  */
-import { ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -12,11 +11,16 @@ const props = defineProps({
   score: Number
 })
 
-const emit = defineEmits(['update:modelValue', 'submit'])
+const emit = defineEmits(['update:modelValue', 'submit', 'reset'])
 
 const visible = ref(props.modelValue)
 const currentQuestion = ref(0)
 const showResult = ref(false)
+
+// 满分按各题分值求和（题库允许每题分值不同）
+const fullScore = computed(() =>
+  (props.questions || []).reduce((sum, item) => sum + (Number(item.score) || 0), 0)
+)
 
 watch(() => props.modelValue, (val) => {
   visible.value = val
@@ -41,11 +45,7 @@ function nextQuestion() {
   }
 }
 
-function selectAnswer(option) {
-  props.answers[props.questions[currentQuestion.value].id] = option
-  nextQuestion()
-}
-
+/** 提交答案由父组件负责持久化，这里只负责关闭弹窗 */
 function submitQuiz() {
   emit('submit')
   visible.value = false
@@ -55,10 +55,11 @@ function close() {
   emit('update:modelValue', false)
 }
 
+/** answers 属于父组件，通过事件请求父组件清空，避免直接改 prop */
 function resetQuiz() {
   currentQuestion.value = 0
   showResult.value = false
-  props.answers = {}
+  emit('reset')
 }
 </script>
 
@@ -74,28 +75,21 @@ function resetQuiz() {
         <div class="question-text">{{ questions[currentQuestion].question }}</div>
         
         <div class="options">
-          <el-radio-group v-model="answers[questions[currentQuestion].id]" @change="selectAnswer">
-            <el-radio :label="questions[currentQuestion].optionA" class="option-item">
+          <el-radio-group v-model="answers[questions[currentQuestion].id]">
+            <el-radio :value="questions[currentQuestion].optionA" class="option-item">
               A. {{ questions[currentQuestion].optionA }}
             </el-radio>
-            <el-radio :label="questions[currentQuestion].optionB" class="option-item">
+            <el-radio :value="questions[currentQuestion].optionB" class="option-item">
               B. {{ questions[currentQuestion].optionB }}
             </el-radio>
-            <el-radio :label="questions[currentQuestion].optionC" class="option-item">
+            <el-radio :value="questions[currentQuestion].optionC" class="option-item">
               C. {{ questions[currentQuestion].optionC }}
             </el-radio>
-            <el-radio :label="questions[currentQuestion].optionD" class="option-item">
+            <el-radio :value="questions[currentQuestion].optionD" class="option-item">
               D. {{ questions[currentQuestion].optionD }}
             </el-radio>
           </el-radio-group>
         </div>
-      </div>
-      
-      <div class="question-footer">
-        <el-button type="text" @click="close">取消</el-button>
-        <el-button type="primary" @click="nextQuestion" :disabled="!answers[questions[currentQuestion].id]">
-          {{ currentQuestion < questions.length - 1 ? '下一题' : '完成答题' }}
-        </el-button>
       </div>
     </div>
 
@@ -103,7 +97,7 @@ function resetQuiz() {
       <div class="result-header">
         <el-icon size="32" color="#c0392b"><Trophy /></el-icon>
         <div class="result-title">答题完成！</div>
-        <div class="result-score">得分：{{ score }} / {{ questions.length * 20 }} 分</div>
+        <div class="result-score">得分：{{ score }} / {{ fullScore }} 分</div>
       </div>
       
       <div class="result-details">
@@ -113,13 +107,13 @@ function resetQuiz() {
           <div class="answer-info">
             <div class="your-answer">
               <span>你的答案：</span>
-              <el-tag :type="answers[question.id] === question.answer ? 'success' : 'danger'">
+              <el-tag :type="answers[question.id] === question.correctAnswer ? 'success' : 'danger'">
                 {{ answers[question.id] || '未作答' }}
               </el-tag>
             </div>
             <div class="correct-answer">
               <span>正确答案：</span>
-              <el-tag type="success">{{ question.answer }}</el-tag>
+              <el-tag type="success">{{ question.correctAnswer }}</el-tag>
             </div>
             <div v-if="question.analysis" class="analysis">
               <span>解析：</span>

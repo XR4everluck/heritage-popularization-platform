@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 前台非遗项目接口：分页检索（分类/关键词/级别/地区/快讯）、详情、历史节点、浏览量自增、同类随机推荐、冷知识

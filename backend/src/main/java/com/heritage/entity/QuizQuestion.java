@@ -56,6 +56,11 @@ public class QuizQuestion {
     private String analysis;
 
     /**
+     * 每题分值：答对后计入用户累计积分
+     */
+    private Integer score;
+
+    /**
      * 难度等级：1-简单，2-中等，3-困难
      */
     private Integer difficulty;

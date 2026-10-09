@@ -19,7 +19,8 @@ const firstLoading = ref(true)
 const query = ref({
   categoryId: route.query.categoryId ? Number(route.query.categoryId) : null,
   level: null,
-  region: null,
+  // 非遗地图点击省份后以 ?region=省份简称 跳转至此，需在首屏即生效
+  region: route.query.region ? String(route.query.region) : null,
   keyword: route.query.keyword ? String(route.query.keyword) : '',
   isNews: route.query.isNews ? Number(route.query.isNews) : null,
   page: 1,
@@ -28,8 +29,13 @@ const query = ref({
 
 // 级别选项
 const LEVELS = ['国家级', '省级', '市级']
-// 常见地区选项
-const REGIONS = ['北京', '上海', '广东', '浙江', '江苏', '四川', '云南', '贵州', '福建', '陕西', '山东', '河南', '湖北', '湖南', '安徽', '江西', '广西', '西藏', '新疆', '内蒙古']
+// 地区选项：与非遗地图的省份名称保持一致（均为省份简称）
+const REGIONS = [
+  '北京', '天津', '河北', '山西', '内蒙古', '辽宁', '吉林', '黑龙江', '上海', '江苏',
+  '浙江', '安徽', '福建', '江西', '山东', '河南', '湖北', '湖南', '广东', '广西',
+  '海南', '重庆', '四川', '贵州', '云南', '西藏', '陕西', '甘肃', '青海', '宁夏',
+  '新疆', '台湾', '香港', '澳门'
+]
 
 onMounted(async () => {
   const res = await getCategoryList()
@@ -45,6 +51,13 @@ watch(() => route.query.categoryId, (val) => {
 
 watch(() => route.query.keyword, (val) => {
   query.value.keyword = val ? String(val) : ''
+  query.value.page = 1
+  loadData()
+})
+
+// 非遗地图点击省份跳转
+watch(() => route.query.region, (val) => {
+  query.value.region = val ? String(val) : null
   query.value.page = 1
   loadData()
 })

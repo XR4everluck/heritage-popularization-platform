@@ -103,8 +103,9 @@ export function submitAnswer(data) {
   return request.post('/api/quiz/submit', data)
 }
 
-export function getQuizRecords(userId) {
-  return request.get('/api/quiz/records', { params: { userId } })
+// 答题记录/总积分都从登录令牌解析当前用户，无需前端传 userId
+export function getQuizRecords() {
+  return request.get('/api/quiz/records')
 }
 
 export function getTotalScore() {
@@ -134,4 +135,13 @@ export function getInheritorDetail(id) {
 // 随机获取一条非遗冷知识（首页「今日非遗」板块）
 export function getRandomTip(heritageId) {
   return request.get('/api/heritage/tip', { params: { heritageId } })
+}
+
+// ---------- 科普快讯（后台「科普快讯管理」维护的短文，置顶优先） ----------
+export function getNewsList(limit = 6) {
+  return request.get('/api/heritage-news/list', { params: { limit } })
+}
+
+export function getNewsDetail(id) {
+  return request.get(`/api/heritage-news/${id}`)
 }

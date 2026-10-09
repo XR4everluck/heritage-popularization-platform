@@ -10,7 +10,13 @@ import { useUserStore } from '../store/user'
 const router = useRouter()
 const userStore = useUserStore()
 
-const activeMenu = computed(() => router.currentRoute.value.path)
+const activeMenu = computed(() => {
+  const path = router.currentRoute.value.path
+  // 详情页（/heritage/12、/inheritor/3）也保持对应一级菜单高亮
+  if (path.startsWith('/heritage')) return '/heritage'
+  if (path.startsWith('/inheritor')) return '/inheritor'
+  return path
+})
 const drawerOpen = ref(false)
 
 /** 抽屉菜单跳转并关闭抽屉 */
@@ -32,6 +38,8 @@ function go(path) {
         <el-menu mode="horizontal" :default-active="activeMenu" :ellipsis="false" router class="nav-menu">
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/heritage">非遗博览</el-menu-item>
+          <el-menu-item index="/inheritor">传承人专题</el-menu-item>
+          <el-menu-item index="/map">非遗地图</el-menu-item>
           <el-menu-item v-if="userStore.isLogin" index="/profile">个人中心</el-menu-item>
         </el-menu>
         <!-- 小屏折叠菜单按钮（<=768px 显示） -->
@@ -43,6 +51,8 @@ function go(path) {
           <div class="drawer-menu">
             <div class="drawer-item" :class="{ active: activeMenu === '/' }" @click="go('/')">首页</div>
             <div class="drawer-item" :class="{ active: activeMenu === '/heritage' }" @click="go('/heritage')">非遗博览</div>
+            <div class="drawer-item" :class="{ active: activeMenu === '/inheritor' }" @click="go('/inheritor')">传承人专题</div>
+            <div class="drawer-item" :class="{ active: activeMenu === '/map' }" @click="go('/map')">非遗地图</div>
             <div v-if="userStore.isLogin" class="drawer-item" :class="{ active: activeMenu === '/profile' }" @click="go('/profile')">个人中心</div>
             <div v-if="userStore.isAdmin" class="drawer-item" @click="go('/admin/dashboard')">进入后台</div>
           </div>

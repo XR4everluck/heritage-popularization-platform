@@ -22,6 +22,10 @@ public class HeritageTip {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    /** 冷知识标题（后台列表展示；前台只展示内容） */
+    @TableField("title")
+    private String title;
+
     /** 冷知识内容 */
     @TableField("content")
     private String content;
@@ -30,7 +34,23 @@ public class HeritageTip {
     @TableField("heritage_id")
     private Long heritageId;
 
+    /** 状态：0-禁用，1-启用 */
+    @TableField("status")
+    private Integer status;
+
+    /** 排序序号，越小越靠前 */
+    @TableField("sort")
+    private Integer sort;
+
     /** 创建时间 */
     @TableField("create_time")
     private Date createTime;
+
+    /** 更新时间 */
+    @TableField("update_time")
+    private Date updateTime;
+
+    /** 是否删除：0-未删除，1-已删除（走全局逻辑删除配置） */
+    @TableField("deleted")
+    private Integer deleted;
 }

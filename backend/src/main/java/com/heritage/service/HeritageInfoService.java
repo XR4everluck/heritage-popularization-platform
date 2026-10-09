@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.heritage.entity.HeritageInfo;
 import com.heritage.vo.HeritageVO;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 非遗项目业务接口：继承 IService 获得通用 CRUD，另含分类名组装与浏览量统计方法
  */

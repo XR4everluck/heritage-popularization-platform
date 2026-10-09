@@ -119,6 +119,24 @@ if not errorlevel 1 (
     )
     echo   结构升级完成。
 )
+:: 科普平台结构检测：缺少 quiz_question 表说明尚未升级到阶段2/3/5的结构，自动补齐
+mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='%DB_NAME%' AND table_name='quiz_question';" 2>nul | findstr "^0$" >nul
+if not errorlevel 1 (
+    echo   [!] 检测到科普功能所需结构缺失，自动升级——新增冷知识/题库/答题记录/传承人/科普快讯等表...
+    for %%s in (upgrade_phase2.sql upgrade_phase3.sql upgrade_phase5.sql) do (
+        if exist "sql\%%s" (
+            mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% --default-character-set=utf8mb4 %DB_NAME% < "sql\%%s"
+            if errorlevel 1 (
+                echo   [×] sql\%%s 执行失败，请手动执行该脚本后重试
+                goto :fail
+            )
+            echo      - sql\%%s 完成。
+        ) else (
+            echo   [!] 未找到 sql\%%s，跳过
+        )
+    )
+    echo   科普功能结构升级完成。
+)
 :: 种子数据检测：非遗项目过少或历史节点为空时自动补导（seed_expansion 幂等可重复）
 set "NEED_SEED=0"
 for /f "delims=" %%a in ('mysql -h%DB_HOST% -P%DB_PORT% -u%DB_USER% -p%DB_PASSWORD% -N -e "SELECT COUNT(*) FROM %DB_NAME%.heritage_info;" 2^>nul') do set "HCNT=%%a"
@@ -155,10 +173,17 @@ for /f %%i in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')+
 echo   已生成 JWT 密钥并保存到 .jwt_secret。
 :jwt_ok
 
-:: ---------- 2. 后端（无 jar 包时自动打包） ----------
+:: ---------- 2. 后端（无 jar 包，或源码比 jar 新时自动打包） ----------
 echo   [2/5] 准备后端服务...
-if exist "backend\target\heritage-backend.jar" goto :be_start
-echo   未找到 jar 包，开始自动打包（首次约 1-3 分钟）...
+set "NEED_BUILD=0"
+if not exist "backend\target\heritage-backend.jar" set "NEED_BUILD=1"
+if "%NEED_BUILD%"=="0" (
+    :: 用 PowerShell 比较 jar 与最新 .java 的修改时间；源码更新则必须重新打包，否则改动不生效
+    for /f %%r in ('powershell -NoProfile -Command "if ((Get-Item backend\target\heritage-backend.jar).LastWriteTime -lt (Get-ChildItem backend\src -Recurse -Filter *.java ^| Sort-Object LastWriteTime -Descending ^| Select-Object -First 1).LastWriteTime) { Write-Output STALE } else { Write-Output FRESH }"') do set "JAR_STATE=%%r"
+    if "!JAR_STATE!"=="STALE" set "NEED_BUILD=1"
+)
+if "%NEED_BUILD%"=="0" goto :be_start
+echo   开始自动打包（首次约 1-3 分钟，请耐心等待）...
 set "MVN="
 where mvn >nul 2>&1 && set "MVN=mvn"
 if not defined MVN (

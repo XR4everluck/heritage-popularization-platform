@@ -4,7 +4,7 @@
     
     <div class="inheritor-header">
       <div class="inheritor-avatar">
-        <img :src="inheritor.avatar || 'https://picsum.photos/seed/inheritor/300/300.jpg'" :alt="inheritor.name">
+        <img :src="inheritor.avatar || defaultCover(inheritor.name || '传承人', 300, 300)" :alt="inheritor.name">
       </div>
       <div class="inheritor-info">
         <h1 class="inheritor-name">{{ inheritor.name }}</h1>
@@ -37,7 +37,7 @@
           </el-empty>
           <div v-for="work in inheritor.works" :key="work.id" class="work-item">
             <div class="work-image">
-              <img :src="work.image || 'https://picsum.photos/seed/work/200/150.jpg'" :alt="work.title">
+              <img :src="work.image || defaultCover(work.title || '代表作品', 200, 150)" :alt="work.title">
             </div>
             <div class="work-info">
               <h4 class="work-title">{{ work.title }}</h4>
@@ -57,7 +57,7 @@
           </el-empty>
           <div v-for="heritage in inheritor.heritageList" :key="heritage.id" class="heritage-item" @click="goHeritageDetail(heritage.id)">
             <div class="heritage-image">
-              <img :src="heritage.coverImage || 'https://picsum.photos/seed/heritage/200/150.jpg'" :alt="heritage.name">
+              <img :src="heritage.coverImage || defaultCover(heritage.name || '非遗项目', 200, 150)" :alt="heritage.name">
             </div>
             <div class="heritage-info">
               <h4 class="heritage-name">{{ heritage.name }}</h4>
@@ -78,7 +78,7 @@
           </el-empty>
           <div v-for="video in inheritor.videos" :key="video.id" class="video-item" @click="goCourseDetail(video.id)">
             <div class="video-image">
-              <img :src="video.coverImage || 'https://picsum.photos/seed/video/200/150.jpg'" :alt="video.title">
+              <img :src="video.coverImage || defaultCover(video.title || '科普视频', 200, 150)" :alt="video.title">
             </div>
             <div class="video-info">
               <h4 class="video-title">{{ video.title }}</h4>
@@ -99,10 +99,27 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { getInheritorDetail } from '../api/front'
+import { ElMessage } from 'element-plus'
+import { getInheritorDetail } from '../../api/front'
+import { defaultCover } from '../../utils/placeholder'
 
 const router = useRouter()
-const inheritor = ref({})
+
+// 预先给出完整字段形状：模板中的 heritageList/videos/works 都会读取 .length，
+// 空对象会让首屏渲染直接抛错导致白屏
+const inheritor = ref({
+  id: null,
+  name: '',
+  title: '',
+  avatar: '',
+  introduction: '',
+  experience: '',
+  achievements: '',
+  tags: [],
+  heritageList: [],
+  videos: [],
+  works: []
+})
 const activeTab = ref('intro')
 
 const pageTitle = '传承人详情'
@@ -115,12 +132,27 @@ onMounted(() => {
 async function loadInheritorDetail(id) {
   try {
     const res = await getInheritorDetail(id)
-    inheritor.value = res.data || {}
+    const data = res.data || {}
+    inheritor.value = {
+      ...inheritor.value,
+      ...data,
+      // 标签可能以逗号分隔的字符串返回，统一成数组供 v-for 使用
+      tags: toArray(data.tags),
+      heritageList: toArray(data.heritageList),
+      videos: toArray(data.videos),
+      works: toArray(data.works)
+    }
   } catch (error) {
     console.error('加载传承人详情失败:', error)
     ElMessage.error('加载传承人详情失败')
     router.push('/inheritor')
   }
+}
+
+function toArray(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string' && value.trim()) return value.split(/[,，]/).map((item) => item.trim()).filter(Boolean)
+  return []
 }
 
 function goBack() {

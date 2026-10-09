@@ -62,7 +62,7 @@ const shareInfo = computed(() => {
   return {
     title: course.value?.name || '科普专题',
     description: currentChapter.value?.title || course.value?.summary || '探索非遗文化的魅力',
-    coverImage: course.value?.cover || 'https://picsum.photos/seed/course/400/300.jpg',
+    coverImage: course.value?.cover || defaultCover(course.value?.name || '科普专题', 400, 300),
     url: currentUrl.value
   }
 })

@@ -5,7 +5,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBanners, getCategoryList, getHeritagePage, getNoticePage, getNoticeDetail,
-         getHotCourses, getLatestProgress, getRecommend, getRandomTip } from '../../api/front'
+         getHotCourses, getLatestProgress, getRecommend, getRandomTip,
+         getNewsList, getNewsDetail } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
@@ -31,8 +32,11 @@ const loadFailed = ref(false)
 // 今日非遗冷知识
 const dailyTip = ref(null)
 
-// 非遗快讯（is_news=1）
+// 科普快讯（后台「科普快讯管理」维护，置顶优先）
 const newsList = ref([])
+const newsLoadingMore = ref(false)
+const newsDetail = ref(null)
+const newsVisible = ref(false)
 
 // 热门搜索标签
 const HOT_KEYWORDS = ['昆曲', '剪纸', '皮影戏', '二十四节气']
@@ -51,7 +55,7 @@ async function loadAll() {
       getNoticePage({ page: 1, pageSize: 5 }),
       getHotCourses(8).catch(() => ({ data: [] })),
       getRecommend({ limit: 4 }).catch(() => ({ data: [] })),
-      getHeritagePage({ page: 1, pageSize: 6, isNews: 1 }).catch(() => ({ data: { records: [] } })),
+      getNewsList(6).catch(() => ({ data: [] })),
       getRandomTip().catch(() => ({ data: null }))
     ])
     banners.value = b.data
@@ -60,7 +64,7 @@ async function loadAll() {
     heritageList.value = h.data.records
     recommendList.value = recommend.data
     notices.value = n.data.records
-    newsList.value = news.data.records
+    newsList.value = news.data || []
     dailyTip.value = tip.data
   } catch (e) {
     loadFailed.value = true
@@ -87,6 +91,33 @@ async function refreshTip() {
     const res = await getRandomTip()
     dailyTip.value = res.data
   } catch { /* ignore */ }
+}
+
+/** 快讯详情（打开时取最新内容，避免列表缓存过期） */
+async function showNews(item) {
+  newsDetail.value = item
+  newsVisible.value = true
+  try {
+    const res = await getNewsDetail(item.id)
+    if (res.data) newsDetail.value = res.data
+  } catch { /* 列表数据已足够展示，忽略详情请求失败 */ }
+}
+
+/** 快讯「查看全部」：一次性拉取更多（后端上限 20 条） */
+async function loadMoreNews() {
+  newsLoadingMore.value = true
+  try {
+    const res = await getNewsList(20)
+    newsList.value = res.data || newsList.value
+  } catch { /* ignore */ } finally {
+    newsLoadingMore.value = false
+  }
+}
+
+/** 快讯正文摘要（去换行，截断展示） */
+function newsExcerpt(content, length = 70) {
+  const text = (content || '').replace(/\s+/g, ' ').trim()
+  return text.length > length ? `${text.slice(0, length)}…` : text
 }
 
 /** 搜索 */
@@ -219,25 +250,49 @@ function scrollHot(dir) {
       </div>
     </div>
 
-    <!-- 非遗快讯（is_news=1 图文列表） -->
+    <!-- 科普快讯（后台「科普快讯管理」维护，置顶优先展示） -->
     <div class="section" v-if="newsList.length">
       <div class="section-head">
-        <h3 class="section-title">非遗快讯</h3>
-        <el-link type="danger" @click="router.push({ path: '/heritage', query: { isNews: 1 } })">更多 &gt;</el-link>
+        <h3 class="section-title">科普快讯</h3>
+        <el-link type="danger" :disabled="newsLoadingMore" @click="loadMoreNews">
+          {{ newsLoadingMore ? '加载中…' : '查看全部 >' }}
+        </el-link>
       </div>
       <div class="news-grid">
-        <div v-for="item in newsList" :key="item.id" class="news-item"
-             @click="router.push(`/heritage/${item.id}`)">
+        <div v-for="item in newsList" :key="item.id" class="news-item" @click="showNews(item)">
           <img v-if="item.coverImage" :src="item.coverImage" class="news-cover" />
           <div class="news-body">
-            <div class="news-tag"><el-tag size="small" type="danger" effect="dark">快讯</el-tag></div>
-            <div class="news-name">{{ item.name }}</div>
-            <div class="news-summary">{{ item.summary }}</div>
+            <div class="news-tag">
+              <el-tag v-if="item.isTop === 1" size="small" type="danger" effect="dark">置顶</el-tag>
+              <el-tag v-else size="small" type="info" effect="plain">快讯</el-tag>
+            </div>
+            <div class="news-name">{{ item.title }}</div>
+            <div class="news-summary">{{ item.heritageName ? item.heritageName + ' · ' : '' }}{{ newsExcerpt(item.content) }}</div>
             <div class="news-meta">{{ (item.publishTime || '').slice(0, 10) }}</div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 快讯详情 -->
+    <el-dialog v-model="newsVisible" :title="newsDetail?.title || '科普快讯'" width="660px">
+      <div v-if="newsDetail" class="news-detail">
+        <div class="news-detail-meta">
+          <el-tag v-if="newsDetail.isTop === 1" size="small" type="danger" effect="dark">置顶</el-tag>
+          <span v-if="newsDetail.heritageName">关联项目：{{ newsDetail.heritageName }}</span>
+          <span>{{ (newsDetail.publishTime || '').slice(0, 10) }}</span>
+        </div>
+        <img v-if="newsDetail.coverImage" :src="newsDetail.coverImage" class="news-detail-cover" />
+        <p class="news-detail-content">{{ newsDetail.content }}</p>
+      </div>
+      <template #footer>
+        <el-button v-if="newsDetail?.heritageId" type="danger" plain
+                   @click="router.push(`/heritage/${newsDetail.heritageId}`); newsVisible = false">
+          查看关联非遗项目
+        </el-button>
+        <el-button @click="newsVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 猜你喜欢 -->
     <div class="section" v-if="recommendList.length">
@@ -487,7 +542,7 @@ function scrollHot(dir) {
   gap: 6px;
 }
 
-/* ---------- 非遗快讯 ---------- */
+/* ---------- 科普快讯 ---------- */
 .news-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -539,6 +594,31 @@ function scrollHot(dir) {
   margin-top: 8px;
   color: #c0c4cc;
   font-size: 12px;
+}
+
+/* ---------- 快讯详情弹窗 ---------- */
+.news-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--gq-text-secondary);
+  font-size: 13px;
+}
+.news-detail-cover {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+.news-detail-content {
+  margin: 0;
+  color: var(--gq-text);
+  font-size: 15px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 @media (max-width: 900px) {
   .news-grid {

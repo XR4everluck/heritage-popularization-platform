@@ -182,28 +182,4 @@ public class QuizQuestionServiceImpl extends ServiceImpl<QuizQuestionMapper, Qui
                 .orderByAsc(QuizQuestion::getId)
                 .list();
     }
-
-    @Override
-    public List<QuizQuestion> getRandomQuestionsByHeritageId(Long heritageId, int count) {
-        List<QuizQuestion> allQuestions = this.lambdaQuery()
-                .eq(QuizQuestion::getHeritageId, heritageId)
-                .list();
-        
-        if (allQuestions.isEmpty()) {
-            return List.of();
-        }
-        
-        // 随机抽取题目
-        Random random = new Random();
-        int size = Math.min(count, allQuestions.size());
-        List<QuizQuestion> result = new java.util.ArrayList<>();
-        
-        for (int i = 0; i < size; i++) {
-            int randomIndex = random.nextInt(allQuestions.size());
-            result.add(allQuestions.get(randomIndex));
-            allQuestions.remove(randomIndex);
-        }
-        
-        return result;
-    }
 }

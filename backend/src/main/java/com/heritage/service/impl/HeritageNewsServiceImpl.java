@@ -128,7 +128,8 @@ public class HeritageNewsServiceImpl extends ServiceImpl<HeritageNewsMapper, Her
                 .eq(HeritageNews::getHeritageId, heritageId)
                 .eq(HeritageNews::getStatus, 1)
                 .eq(HeritageNews::getDeleted, 0)
-                .orderByAsc(HeritageNews::getIsTop)
+                // 置顶(1) 优先于 非置顶(0)
+                .orderByDesc(HeritageNews::getIsTop)
                 .orderByDesc(HeritageNews::getPublishTime)
         );
     }

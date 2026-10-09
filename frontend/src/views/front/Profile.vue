@@ -11,7 +11,7 @@ import { getProfile, updateProfile } from '../../api/user'
 import { useUserStore } from '../../store/user'
 import FileUpload from '../../components/FileUpload.vue'
 import { defaultCover } from '../../utils/placeholder'
-import { Award } from '@element-plus/icons-vue'
+import { Medal } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -174,7 +174,7 @@ async function saveProfile() {
     </el-card>
     <el-card shadow="never" class="stat-card">
       <div class="stat-num" :style="{ color: 'var(--gq-danger)' }">{{ totalScore || 0 }}</div>
-      <div class="stat-label"><el-icon><Award /></el-icon> 我的积分</div>
+      <div class="stat-label"><el-icon><Medal /></el-icon> 我的积分</div>
     </el-card>
   </div>
 

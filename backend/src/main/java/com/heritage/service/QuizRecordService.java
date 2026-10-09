@@ -3,6 +3,8 @@ package com.heritage.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.heritage.entity.QuizRecord;
 
+import java.util.List;
+
 /**
  * 非遗小测验答题记录Service
  */

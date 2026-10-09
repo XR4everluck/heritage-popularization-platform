@@ -64,6 +64,16 @@ public class AdminQuizQuestionController {
     }
 
     /**
+     * 按非遗项目查询题目列表（题库管理按项目分组展示）
+     *
+     * @param heritageId 非遗项目ID
+     */
+    @GetMapping("/heritage/{heritageId}")
+    public Result<List<QuizQuestion>> listByHeritage(@PathVariable Long heritageId) {
+        return Result.ok(quizQuestionService.listByHeritageId(heritageId));
+    }
+
+    /**
      * 获取题目详情
      */
     @GetMapping("/{id}")

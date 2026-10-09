@@ -13,19 +13,32 @@ const PALETTES = [
   ['#c0392b', '#8e44ad']
 ]
 
-/** 生成默认封面 data-URI（text 显示在图中央） */
+/** 生成默认封面 data-URI（text 单行居中显示，超出按宽度等比缩小并截断） */
 export function defaultCover(text = '非遗之美', width = 600, height = 360) {
-  const palette = PALETTES[Math.abs(hashCode(text)) % PALETTES.length]
+  const raw = String(text ?? '').replace(/\s+/g, ' ').trim() || '非遗之美'
+  const label = raw.length > 14 ? raw.slice(0, 13) + '…' : raw
+  const palette = PALETTES[Math.abs(hashCode(raw)) % PALETTES.length]
+  // 中文字宽约等于字号，按 86% 可用宽度反推字号，避免长标题溢出裁切
+  const fontSize = Math.max(18, Math.min(Math.round(height / 6), Math.floor((width * 0.86) / label.length)))
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="${palette[0]}"/><stop offset="1" stop-color="${palette[1]}"/>
   </linearGradient></defs>
   <rect width="100%" height="100%" fill="url(#g)"/>
   <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle"
-    font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="${Math.round(height / 6)}"
-    fill="rgba(255,255,255,0.92)" font-weight="bold">${text}</text>
+    font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="${fontSize}"
+    fill="rgba(255,255,255,0.92)" font-weight="bold">${escapeXml(label)}</text>
 </svg>`
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+}
+
+/** SVG 文本转义：标题含 & < > 时否则会生成非法 SVG，导致图片无法解析 */
+function escapeXml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 function hashCode(str) {

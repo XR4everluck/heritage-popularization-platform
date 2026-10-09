@@ -7,6 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getHeritageDetail, getHeritageRecommend, getLatestProgress, getRandomTip, getRandomQuestions, submitAnswer, getQuizRecords, getTotalScore } from '../../api/front'
 import { useUserStore } from '../../store/user'
+import { defaultCover } from '../../utils/placeholder'
 import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
 import CateIcon from '../../components/CateIcon.vue'
@@ -46,7 +47,7 @@ onMounted(async () => {
 async function loadQuizRecords() {
   if (!userStore.isLogin) return
   try {
-    const res = await getQuizRecords(userStore.userInfo.id)
+    const res = await getQuizRecords()
     quizRecords.value = res.data
   } catch {
     /* 忽略错误 */
@@ -115,8 +116,8 @@ const currentUrl = computed(() => {
 const shareInfo = computed(() => {
   return {
     title: info.value?.name || '非遗文化项目',
-    description: info.value?.description || '探索中国传统非遗文化的魅力',
-    coverImage: info.value?.coverImage || 'https://picsum.photos/seed/heritage/400/300.jpg',
+    description: info.value?.summary || '探索中国传统非遗文化的魅力',
+    coverImage: info.value?.coverImage || defaultCover(info.value?.name || '非遗文化项目', 400, 300),
     url: currentUrl.value
   }
 })
@@ -144,26 +145,34 @@ async function loadQuizQuestions() {
   }
 }
 
-// 提交答案
+// 提交答案：逐题提交，后端按题判分并累计积分
 async function submitQuiz() {
-  const answers = Object.values(quizAnswers.value)
-  if (answers.length !== quizQuestions.value.length) {
+  const answered = Object.keys(quizAnswers.value).length
+  if (answered !== quizQuestions.value.length) {
     ElMessage.warning('请完成所有题目后再提交')
     return
   }
 
   try {
-    const res = await submitAnswer({
-      userId: userStore.userInfo.id,
-      questionId: quizQuestions.value[0].id, // 使用第一题ID作为示例
-      answer: answers[0] // 使用第一题答案作为示例
-    })
-    quizScore.value = res.data.score
+    const results = await Promise.all(quizQuestions.value.map((question) =>
+      submitAnswer({
+        questionId: question.id,
+        answer: quizAnswers.value[question.id]
+      })
+    ))
+    quizScore.value = results.reduce((sum, res) => sum + (Number(res.data?.score) || 0), 0)
     ElMessage.success(`答题完成！得分：${quizScore.value}分`)
     loadQuizRecords()
   } catch (e) {
     ElMessage.error('提交答案失败，请稍后再试')
   }
+}
+
+// 再答一次：清空作答记录并重新抽题
+function resetQuiz() {
+  quizAnswers.value = {}
+  quizScore.value = 0
+  loadQuizQuestions()
 }
 
 // 提交评论
@@ -323,7 +332,7 @@ watch(() => useRoute().params.id, loadDetail)
     </el-card>
 
     <QuizModal v-model="quizModalVisible" :questions="quizQuestions" :answers="quizAnswers"
-              :score="quizScore" @submit="submitQuiz" />
+              :score="quizScore" @submit="submitQuiz" @reset="resetQuiz" />
     
     <!-- 分享弹窗 -->
     <ShareModal v-model="shareModalVisible" :share-info="shareInfo" @close="closeShare" />

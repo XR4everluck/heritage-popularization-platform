@@ -67,4 +67,12 @@ public interface QuizQuestionService extends IService<QuizQuestion> {
      * @return 题目列表
      */
     List<QuizQuestion> getRandomQuestions(Long heritageId, Integer count);
+
+    /**
+     * 根据非遗项目ID获取全部题目（含已禁用，供后台管理列表使用）
+     *
+     * @param heritageId 非遗项目ID
+     * @return 题目列表，按ID升序
+     */
+    List<QuizQuestion> listByHeritageId(Long heritageId);
 }

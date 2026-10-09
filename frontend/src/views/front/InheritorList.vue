@@ -14,7 +14,7 @@
       
       <div v-for="inheritor in inheritorList" :key="inheritor.id" class="inheritor-card" @click="goInheritorDetail(inheritor.id)">
         <div class="inheritor-image">
-          <img :src="inheritor.avatar || 'https://picsum.photos/seed/inheritor/200/200.jpg'" :alt="inheritor.name">
+          <img :src="inheritor.avatar || defaultCover(inheritor.name || '传承人', 200, 200)" :alt="inheritor.name">
         </div>
         <div class="inheritor-info">
           <h3 class="inheritor-name">{{ inheritor.name }}</h3>
@@ -33,7 +33,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { getInheritorList } from '../api/front'
+import { getInheritorList } from '../../api/front'
+import { defaultCover } from '../../utils/placeholder'
 
 const router = useRouter()
 const inheritorList = ref([])

@@ -46,7 +46,8 @@ public class AdminHeritageNewsController {
                         .eq(isTop != null, HeritageNews::getIsTop, isTop)
                         .eq(status != null, HeritageNews::getStatus, status)
                         .eq(HeritageNews::getDeleted, 0)
-                        .orderByAsc(HeritageNews::getIsTop)
+                        // 置顶(1) 优先于 非置顶(0)
+                        .orderByDesc(HeritageNews::getIsTop)
                         .orderByDesc(HeritageNews::getPublishTime)
         );
         

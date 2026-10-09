@@ -2,6 +2,7 @@ package com.heritage.service.impl;
 
 import cn.hutool.crypto.digest.BCrypt;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.heritage.common.ResultCode;
 import com.heritage.dto.LoginDTO;
@@ -71,5 +72,16 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         update.setAvatar(dto.getAvatar());
         update.setIntroduction(dto.getIntroduction());
         this.updateById(update);
+    }
+
+    @Override
+    public void increaseTotalScore(Long userId, Integer score) {
+        if (userId == null || score == null || score <= 0) {
+            return;
+        }
+        // setSql 原子自增，避免并发答题时"读-改-写"相互覆盖
+        this.update(new LambdaUpdateWrapper<SysUser>()
+                .setSql("total_score = IFNULL(total_score, 0) + " + score)
+                .eq(SysUser::getId, userId));
     }
 }

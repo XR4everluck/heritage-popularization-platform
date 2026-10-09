@@ -25,4 +25,12 @@ public interface SysUserService extends IService<SysUser> {
      * 修改个人资料：仅更新 DTO 中传入的字段，不影响角色/状态等敏感字段
      */
     void updateProfile(Long userId, UserUpdateDTO dto);
+
+    /**
+     * 累加用户积分（答题得分后调用）
+     *
+     * @param userId 用户ID
+     * @param score  本次新增积分，为 null 或非正数时不处理
+     */
+    void increaseTotalScore(Long userId, Integer score);
 }
