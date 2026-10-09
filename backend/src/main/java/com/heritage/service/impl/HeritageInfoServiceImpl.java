@@ -68,6 +68,117 @@ public class HeritageInfoServiceImpl extends ServiceImpl<HeritageInfoMapper, Her
         this.lambdaUpdate().eq(HeritageInfo::getId, id).setSql("view_count = view_count + 1").update();
     }
 
+    @Override
+    public List<HeritageInfo> recommendByMultiDimension(Long heritageId, Integer limit) {
+        int safeLimit = Math.max(1, Math.min(limit != null ? limit : 4, 8));
+        
+        // 获取当前非遗项目信息
+        HeritageInfo current = this.getById(heritageId);
+        if (current == null) {
+            return Collections.emptyList();
+        }
+
+        // 构建多维度查询条件
+        LambdaQueryWrapper<HeritageInfo> qw = new LambdaQueryWrapper<>();
+        qw.ne(HeritageInfo::getId, heritageId) // 排除当前项目
+          .isNotNull(HeritageInfo::getPublishTime); // 只返回已发布的项目
+
+        // 获取所有符合条件的非遗项目
+        List<HeritageInfo> allCandidates = this.list(qw);
+        
+        // 如果没有候选项目，返回空列表
+        if (allCandidates.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 计算每个候选项目的权重分数
+        List<HeritageInfo> scoredCandidates = allCandidates.stream()
+                .map(candidate -> {
+                    double score = 0.0;
+                    
+                    // 1. 同分类权重（40%）
+                    if (current.getCategoryId() != null && current.getCategoryId().equals(candidate.getCategoryId())) {
+                        score += 0.4;
+                    }
+                    
+                    // 2. 同地区权重（30%）
+                    if (current.getRegion() != null && current.getRegion().equals(candidate.getRegion())) {
+                        score += 0.3;
+                    }
+                    
+                    // 3. 同级别权重（20%）
+                    if (current.getLevel() != null && current.getLevel().equals(candidate.getLevel())) {
+                        score += 0.2;
+                    }
+                    
+                    // 4. 同一传承人权重（10%）
+                    if (current.getInheritorId() != null && current.getInheritorId().equals(candidate.getInheritorId())) {
+                        score += 0.1;
+                    }
+                    
+                    // 添加浏览量权重作为次要因素
+                    score += (candidate.getViewCount() != null ? candidate.getViewCount() : 0) * 0.0001;
+                    
+                    return candidate;
+                })
+                .sorted((a, b) -> {
+                    // 重新计算分数并排序
+                    double scoreA = calculateScore(current, a);
+                    double scoreB = calculateScore(current, b);
+                    return Double.compare(scoreB, scoreA); // 降序排序
+                })
+                .limit(safeLimit)
+                .collect(Collectors.toList());
+
+        return scoredCandidates;
+    }
+
+    /**
+     * 计算候选项目相对于当前项目的权重分数
+     */
+    private double calculateScore(HeritageInfo current, HeritageInfo candidate) {
+        double score = 0.0;
+        
+        // 同分类权重（40%）
+        if (current.getCategoryId() != null && current.getCategoryId().equals(candidate.getCategoryId())) {
+            score += 0.4;
+        }
+        
+        // 同地区权重（30%）
+        if (current.getRegion() != null && current.getRegion().equals(candidate.getRegion())) {
+            score += 0.3;
+        }
+        
+        // 同级别权重（20%）
+        if (current.getLevel() != null && current.getLevel().equals(candidate.getLevel())) {
+            score += 0.2;
+        }
+        
+        // 同一传承人权重（10%）
+        if (current.getInheritorId() != null && current.getInheritorId().equals(candidate.getInheritorId())) {
+            score += 0.1;
+        }
+        
+        // 浏览量权重（作为次要因素）
+        score += (candidate.getViewCount() != null ? candidate.getViewCount() : 0) * 0.0001;
+        
+        return score;
+    }
+
+    @Override
+    public Map<String, Long> countByRegion() {
+        List<HeritageInfo> heritageList = this.lambdaQuery()
+                .isNotNull(HeritageInfo::getPublishTime)
+                .isNotNull(HeritageInfo::getRegion)
+                .list();
+
+        return heritageList.stream()
+                .collect(Collectors.groupingBy(
+                        heritage -> heritage.getRegion() != null ? heritage.getRegion() : "未知地区",
+                        Collectors.counting()
+                ));
+    }
+
     /** 批量查询分类名称映射（一次查询，避免循环单查） */
     private Map<Long, String> categoryNameMap(List<HeritageInfo> records) {
         if (records.isEmpty()) {

@@ -115,6 +115,14 @@ export function getRecommend(params) {
   return request.get('/api/heritage/recommend', { params })
 }
 
+export function getHeritageRecommend(heritageId, limit = 4) {
+  return request.get('/api/heritage/recommend', { params: { heritageId, limit } })
+}
+
+export function getRegionStats() {
+  return request.get('/api/heritage/region/stats')
+}
+
 export function getInheritorList() {
   return request.get('/api/inheritor/list')
 }

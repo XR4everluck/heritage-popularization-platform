@@ -14,6 +14,7 @@ const routes = [
       { path: 'course/:id', name: 'courseDetail', component: () => import('../views/front/CourseDetail.vue'), meta: { title: '科普观看' } },
       { path: 'inheritor', name: 'inheritorList', component: () => import('../views/front/InheritorList.vue'), meta: { title: '传承人专题' } },
       { path: 'inheritor/:id', name: 'inheritorDetail', component: () => import('../views/front/InheritorDetail.vue'), meta: { title: '传承人详情' } },
+      { path: 'map', name: 'heritageMap', component: () => import('../views/front/HeritageMap.vue'), meta: { title: '非遗地图' } },
       { path: 'profile', name: 'profile', component: () => import('../views/front/Profile.vue'), meta: { title: '个人中心', requiresAuth: true } },
       { path: 'login', name: 'login', component: () => import('../views/front/Login.vue'), meta: { title: '登录' } }
     ]

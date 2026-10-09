@@ -89,18 +89,33 @@ public class FrontHeritageController {
     }
 
     /**
-     * 猜你喜欢：按分类随机推荐非遗项目（仅已发布）。
-     * 传 categoryId 时在同分类内随机（详情页推荐传 excludeId 排除当前项目）；
-     * 不传 categoryId 时从全部项目中随机（首页底部推荐）。
+     * 猜你喜欢：多维度关联推荐非遗项目（仅已发布）。
+     * 基于同分类(40%)、同地区(30%)、同级别(20%)、同一传承人(10%)的加权推荐
+     *
+     * @param heritageId 当前非遗项目ID（详情页推荐时传当前项目ID，避免推荐自己）
+     * @param limit      推荐条数，默认 4，限制在 1-8 之间
+     */
+    @GetMapping("/recommend")
+    public Result<List<HeritageInfo>> recommend(@RequestParam(required = false) Long heritageId,
+                                                @RequestParam(defaultValue = "4") Integer limit) {
+        List<HeritageInfo> list = heritageInfoService.recommendByMultiDimension(heritageId, limit);
+        return Result.ok(list);
+    }
+
+    /**
+     * 兼容旧接口：按分类随机推荐非遗项目（仅已发布）。
+     * 保留此接口用于向后兼容，新功能请使用多维度推荐接口
      *
      * @param categoryId 分类ID（可空）
      * @param excludeId  排除的项目ID（可空，详情页传当前项目避免推荐自己）
      * @param limit      推荐条数，默认 4，限制在 1-8 之间
+     * @deprecated 使用 {@link #recommend(Long, Integer)} 替代
      */
-    @GetMapping("/recommend")
-    public Result<List<HeritageInfo>> recommend(@RequestParam(required = false) Long categoryId,
-                                                @RequestParam(required = false) Long excludeId,
-                                                @RequestParam(defaultValue = "4") Integer limit) {
+    @GetMapping("/recommend/legacy")
+    @Deprecated
+    public Result<List<HeritageInfo>> recommendLegacy(@RequestParam(required = false) Long categoryId,
+                                                      @RequestParam(required = false) Long excludeId,
+                                                      @RequestParam(defaultValue = "4") Integer limit) {
         int safeLimit = Math.max(1, Math.min(limit, 8));
         List<HeritageInfo> list = heritageInfoService.lambdaQuery()
                 .isNotNull(HeritageInfo::getPublishTime)
@@ -109,6 +124,18 @@ public class FrontHeritageController {
                 .last("ORDER BY RAND() LIMIT " + safeLimit)
                 .list();
         return Result.ok(list);
+    }
+
+    /**
+     * 按地区分组统计非遗数量
+     * 用于非遗地图可视化，返回每个省份的非遗项目数量
+     *
+     * @return 地区名称到非遗数量的映射
+     */
+    @GetMapping("/region/stats")
+    public Result<Map<String, Long>> regionStats() {
+        Map<String, Long> stats = heritageInfoService.countByRegion();
+        return Result.ok(stats);
     }
 
     /**

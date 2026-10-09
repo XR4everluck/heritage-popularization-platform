@@ -12,6 +12,8 @@ import artplayerPluginDanmuku from 'artplayer-plugin-danmuku'
 import { getCourseDetail, getCourseChapters, getMyProgress, updateProgress, addCourseView } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import { defaultCover, coverFallback } from '../../utils/placeholder'
+import ShareModal from '../../components/ShareModal.vue'
+import { ArrowLeft, TopRight, CircleCheck, Share } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,6 +51,31 @@ const isMedia = computed(() => {
   const url = currentChapter.value?.videoUrl || ''
   return /\.(mp4|webm|ogg|ogv|mov|mkv|m4a)(\?.*)?$/i.test(url)
 })
+
+// 计算当前页面URL
+const currentUrl = computed(() => {
+  return window.location.pathname
+})
+
+// 分享信息
+const shareInfo = computed(() => {
+  return {
+    title: course.value?.name || '科普专题',
+    description: currentChapter.value?.title || course.value?.summary || '探索非遗文化的魅力',
+    coverImage: course.value?.cover || 'https://picsum.photos/seed/course/400/300.jpg',
+    url: currentUrl.value
+  }
+})
+
+// 打开分享弹窗
+function openShare() {
+  shareModalVisible.value = true
+}
+
+// 关闭分享弹窗
+function closeShare() {
+  shareModalVisible.value = false
+}
 
 // ---------- ArtPlayer 播放器（进度本地记忆 + 弹幕 + 章节标记） ----------
 const playerRef = ref(null)
@@ -273,6 +300,7 @@ async function reportProgress(finished) {
         <div class="study-actions">
           <span class="study-tip">观看视频时长会自动累计到观看记录</span>
           <el-button type="danger" plain @click="reportProgress(true)"><el-icon><CircleCheck /></el-icon>&nbsp;标记本节完成</el-button>
+          <el-button type="primary" @click="openShare"><el-icon><Share /></el-icon>&nbsp;分享</el-button>
         </div>
       </el-card>
 
@@ -298,6 +326,9 @@ async function reportProgress(finished) {
         <div v-if="!userStore.isLogin" class="login-tip">登录后可记录观看记录</div>
       </el-card>
     </div>
+
+    <!-- 分享弹窗 -->
+    <ShareModal v-model="shareModalVisible" :share-info="shareInfo" @close="closeShare" />
   </div>
 </template>
 

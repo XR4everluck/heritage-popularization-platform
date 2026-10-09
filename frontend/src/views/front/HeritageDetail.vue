@@ -5,13 +5,14 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getHeritageDetail, getRecommend, getLatestProgress, getRandomTip, getRandomQuestions, submitAnswer, getQuizRecords, getTotalScore } from '../../api/front'
+import { getHeritageDetail, getHeritageRecommend, getLatestProgress, getRandomTip, getRandomQuestions, submitAnswer, getQuizRecords, getTotalScore } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
 import CateIcon from '../../components/CateIcon.vue'
 import QuizModal from '../../components/QuizModal.vue'
-import { User } from '@element-plus/icons-vue'
+import ShareModal from '../../components/ShareModal.vue'
+import { User, Share } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -31,11 +32,14 @@ const quizQuestions = ref([])
 const quizAnswers = ref({})
 const quizScore = ref(0)
 const quizRecords = ref([])
+const relatedRecommendations = ref([])
+const shareModalVisible = ref(false)
 
 onMounted(async () => {
   loadDetail()
   loadLatest()
   loadQuizRecords()
+  loadRelatedRecommendations()
 })
 
 // 加载答题记录
@@ -87,10 +91,35 @@ async function loadLatest() {
     }
   }
 
-  // 跳转到传承人详情页
-  function goInheritorDetail(inheritorId) {
-    router.push(`/inheritor/${inheritorId}`)
+// 跳转到传承人详情页
+function goInheritorDetail(inheritorId) {
+  router.push(`/inheritor/${inheritorId}`)
+}
+
+// 打开分享弹窗
+function openShare() {
+  shareModalVisible.value = true
+}
+
+// 关闭分享弹窗
+function closeShare() {
+  shareModalVisible.value = false
+}
+
+// 计算当前页面URL
+const currentUrl = computed(() => {
+  return window.location.pathname
+})
+
+// 分享信息
+const shareInfo = computed(() => {
+  return {
+    title: info.value?.name || '非遗文化项目',
+    description: info.value?.description || '探索中国传统非遗文化的魅力',
+    coverImage: info.value?.coverImage || 'https://picsum.photos/seed/heritage/400/300.jpg',
+    url: currentUrl.value
   }
+})
 
 // 打开测验弹窗
 function openQuiz() {
@@ -162,6 +191,17 @@ async function loadComments() {
   // TODO: 实现评论分页加载
 }
 
+// 加载相关推荐
+async function loadRelatedRecommendations() {
+  if (!info.value?.id) return
+  try {
+    const res = await getHeritageRecommend(info.value.id, 4)
+    relatedRecommendations.value = res.data || []
+  } catch (error) {
+    console.error('加载相关推荐失败:', error)
+  }
+}
+
 watch(() => useRoute().params.id, loadDetail)
 </script>
 
@@ -215,6 +255,9 @@ watch(() => useRoute().params.id, loadDetail)
                      @click="toggleCollect">
             <el-icon><StarFilled /></el-icon>&nbsp;{{ collected ? '取消收藏' : '收藏本项目' }}
           </el-button>
+          <el-button type="primary" class="share-btn" @click="openShare">
+            <el-icon><Share /></el-icon>&nbsp;分享
+          </el-button>
         </div>
       </el-card>
 
@@ -225,6 +268,17 @@ watch(() => useRoute().params.id, loadDetail)
         <el-row :gutter="12">
           <el-col v-for="course in courses" :key="course.id" :xs="12" :sm="12" :md="12" :lg="12">
             <CourseCard :item="course" @open="router.push(`/course/${course.id}`)" />
+          </el-col>
+        </el-row>
+      </el-card>
+
+      <!-- 相关推荐（多维度关联） -->
+      <el-card shadow="never" class="side-card">
+        <template #header><b>相关推荐</b></template>
+        <el-empty v-if="!relatedRecommendations.length" description="暂无相关推荐" :image-size="50" />
+        <el-row :gutter="12">
+          <el-col v-for="heritage in relatedRecommendations" :key="heritage.id" :xs="12" :sm="12" :md="12" :lg="12">
+            <HeritageCard :item="heritage" @open="router.push(`/heritage/${heritage.id}`)" />
           </el-col>
         </el-row>
       </el-card>
@@ -270,6 +324,9 @@ watch(() => useRoute().params.id, loadDetail)
 
     <QuizModal v-model="quizModalVisible" :questions="quizQuestions" :answers="quizAnswers"
               :score="quizScore" @submit="submitQuiz" />
+    
+    <!-- 分享弹窗 -->
+    <ShareModal v-model="shareModalVisible" :share-info="shareInfo" @close="closeShare" />
   </div>
 </template>
 
@@ -328,10 +385,14 @@ watch(() => useRoute().params.id, loadDetail)
   align-items: center;
   gap: 10px;
 }
-.collect-btn {
+.collect-btn, .share-btn {
   position: absolute;
   top: 20px;
   right: 20px;
+}
+
+.share-btn {
+  margin-right: 120px;
 }
 .side-card {
   margin-bottom: 20px;
