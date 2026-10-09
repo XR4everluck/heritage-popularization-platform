@@ -43,6 +43,10 @@ public class HeritageInfo {
     @TableField("inheritor")
     private String inheritor;
 
+    /** 传承人ID（关联inheritor表） */
+    @TableField("inheritor_id")
+    private Long inheritorId;
+
     /** 非遗简介（列表页摘要展示） */
     @TableField("summary")
     private String summary;

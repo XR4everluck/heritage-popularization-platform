@@ -56,6 +56,10 @@ public class SysUser {
     @TableField("introduction")
     private String introduction;
 
+    /** 累计积分 */
+    @TableField("total_score")
+    private Integer totalScore;
+
     /** 账号状态：1-正常，0-禁用 */
     @TableField("status")
     private Integer status;

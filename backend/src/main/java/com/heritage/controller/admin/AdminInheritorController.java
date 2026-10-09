@@ -73,8 +73,12 @@ public class AdminInheritorController {
         try {
             inheritor = inheritorService.saveInheritor(inheritor);
             return Result.ok(inheritor);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            return Result.error("参数错误：" + e.getMessage());
+        } catch (RuntimeException e) {
             return Result.error("保存失败：" + e.getMessage());
+        } catch (Exception e) {
+            return Result.error("系统错误，请稍后重试");
         }
     }
 

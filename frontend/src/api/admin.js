@@ -74,3 +74,67 @@ export const tipApi = {
   update: (data) => request.put('/api/admin/tip', data),
   remove: (id) => request.delete(`/api/admin/tip/${id}`)
 }
+
+// 传承人管理
+export const inheritorApi = {
+  page: (params) => request.get('/api/admin/inheritor/page', { params }),
+  add: (data) => request.post('/api/admin/inheritor', data),
+  update: (data) => request.put('/api/admin/inheritor', data),
+  remove: (id) => request.delete(`/api/admin/inheritor/${id}`),
+  get: (id) => request.get(`/api/admin/inheritor/${id}`),
+  updateStatus: (id, status) => request.put(`/api/admin/inheritor/status/${id}`, null, { params: { status } }),
+  list: () => request.get('/api/admin/inheritor/list')
+}
+
+// 题库管理
+export const quizQuestionApi = {
+  page: (params) => request.get('/api/admin/quiz-question/page', { params }),
+  add: (data) => request.post('/api/admin/quiz-question', data),
+  update: (data) => request.put('/api/admin/quiz-question', data),
+  remove: (id) => request.delete(`/api/admin/quiz-question/${id}`),
+  get: (id) => request.get(`/api/admin/quiz-question/${id}`),
+  updateStatus: (id, status) => request.put(`/api/admin/quiz-question/status/${id}`, null, { params: { status } }),
+  getByHeritage: (heritageId) => request.get(`/api/admin/quiz-question/heritage/${heritageId}`),
+  batchImport: (data) => request.post('/api/admin/quiz-question/batch-import', data),
+  getRandom: (params) => request.get('/api/admin/quiz-question/random', { params })
+}
+
+// 冷知识管理（新接口）
+export const heritageTipApi = {
+  page: (params) => request.get('/api/admin/heritage-tip/page', { params }),
+  add: (data) => request.post('/api/admin/heritage-tip', data),
+  update: (data) => request.put('/api/admin/heritage-tip', data),
+  remove: (id) => request.delete(`/api/admin/heritage-tip/${id}`),
+  get: (id) => request.get(`/api/admin/heritage-tip/${id}`),
+  updateStatus: (id, status) => request.put(`/api/admin/heritage-tip/status/${id}`, null, { params: { status } }),
+  getByHeritage: (heritageId) => request.get(`/api/admin/heritage-tip/heritage/${heritageId}`),
+  randomOne: (params) => request.get('/api/admin/heritage-tip/random', { params })
+}
+
+// 科普快讯管理
+export const heritageNewsApi = {
+  page: (params) => request.get('/api/admin/heritage-news/page', { params }),
+  add: (data) => request.post('/api/admin/heritage-news', data),
+  update: (data) => request.put('/api/admin/heritage-news', data),
+  remove: (id) => request.delete(`/api/admin/heritage-news/${id}`),
+  get: (id) => request.get(`/api/admin/heritage-news/${id}`),
+  updateStatus: (id, status) => request.put(`/api/admin/heritage-news/status/${id}`, null, { params: { status } }),
+  updateTop: (id, isTop) => request.put(`/api/admin/heritage-news/top/${id}`, null, { params: { isTop } }),
+  getByHeritage: (heritageId) => request.get(`/api/admin/heritage-news/heritage/${heritageId}`),
+  getTop: () => request.get('/api/admin/heritage-news/top'),
+  getLatest: (limit) => request.get('/api/admin/heritage-news/latest', { params: { limit } })
+}
+
+// 数据看板
+export const dashboardApi = {
+  getBasic: () => request.get('/api/admin/dashboard/basic'),
+  getQuizParticipation: () => request.get('/api/admin/dashboard/quiz-participation'),
+  getTotalScore: () => request.get('/api/admin/dashboard/total-score'),
+  getInheritorCount: () => request.get('/api/admin/dashboard/inheritor-count'),
+  getTipCount: () => request.get('/api/admin/dashboard/tip-count'),
+  getRegionDistribution: () => request.get('/api/admin/dashboard/region-distribution'),
+  getLevelDistribution: () => request.get('/api/admin/dashboard/level-distribution'),
+  getQuizTrend: () => request.get('/api/admin/dashboard/quiz-trend'),
+  getPopularHeritage: (limit) => request.get('/api/admin/dashboard/popular-heritage', { params: { limit } }),
+  getOverview: () => request.get('/api/admin/dashboard/overview')
+}
