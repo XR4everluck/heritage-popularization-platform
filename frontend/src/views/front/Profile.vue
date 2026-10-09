@@ -148,15 +148,15 @@ async function saveProfile() {
   <div class="stat-row">
     <el-card shadow="never" class="stat-card">
       <div class="stat-num" :style="{ color: 'var(--gq-primary)' }">{{ formatMinutes(studyStats.totalMinutes) }}</div>
-      <div class="stat-label"><el-icon><Timer /></el-icon> 累计学习时长</div>
+      <div class="stat-label"><el-icon><Timer /></el-icon> 累计观看时长</div>
     </el-card>
     <el-card shadow="never" class="stat-card">
       <div class="stat-num" :style="{ color: 'var(--gq-gold)' }">{{ studyStats.finishedChapters }}</div>
-      <div class="stat-label"><el-icon><CircleCheck /></el-icon> 完成章节数</div>
+      <div class="stat-label"><el-icon><CircleCheck /></el-icon> 完成内容数</div>
     </el-card>
     <el-card shadow="never" class="stat-card">
       <div class="stat-num" :style="{ color: 'var(--gq-secondary)' }">{{ studyStats.streakDays }} 天</div>
-      <div class="stat-label"><el-icon><Sunny /></el-icon> 连续学习天数</div>
+      <div class="stat-label"><el-icon><Sunny /></el-icon> 连续观看天数</div>
     </el-card>
   </div>
 
@@ -198,10 +198,10 @@ async function saveProfile() {
         </div>
       </el-tab-pane>
 
-      <!-- 我的学习（按课程聚合 + 完成度进度条） -->
-      <el-tab-pane label="我的学习" name="study">
-        <el-empty v-if="!progressList.length" description="还没有学习记录，选一门课开始学习吧">
-          <el-button type="danger" @click="router.push('/')">去看精品课程</el-button>
+      <!-- 我的观看（按科普专题聚合 + 完成度进度条） -->
+      <el-tab-pane label="我的观看" name="study">
+        <el-empty v-if="!progressList.length" description="还没有观看记录，选一个科普专题开始观看吧">
+          <el-button type="danger" @click="router.push('/')">去看热门科普视频</el-button>
         </el-empty>
         <div v-for="course in courseStudy" :key="course.courseId" class="course-study"
              @click="router.push(`/course/${course.courseId}`)">
@@ -216,7 +216,7 @@ async function saveProfile() {
               <div class="study-chapter">{{ item.chapterTitle }}</div>
             </div>
             <div class="study-right">
-              <el-tag size="small" :type="item.finished ? 'success' : 'info'">{{ item.finished ? '已完成' : '学习中' }}</el-tag>
+              <el-tag size="small" :type="item.finished ? 'success' : 'info'">{{ item.finished ? '已完成' : '观看中' }}</el-tag>
               <span class="study-duration">{{ item.studyDuration }} 分钟</span>
             </div>
           </div>

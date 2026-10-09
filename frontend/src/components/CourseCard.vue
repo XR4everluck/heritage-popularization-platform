@@ -34,7 +34,7 @@ function formatDuration(minutes) {
         <el-tag v-if="item.teacher" size="small" type="warning">{{ item.teacher }}</el-tag>
       </div>
       <div class="gq-card-meta">
-        <span v-if="item.chapterCount" class="gq-card-region">共 {{ item.chapterCount }} 章</span>
+        <span v-if="item.chapterCount" class="gq-card-region">共 {{ item.chapterCount }} 节</span>
         <span v-else class="gq-card-region">上线于 {{ (item.publishTime || '').slice(0, 10) || '-' }}</span>
         <span><el-icon><View /></el-icon>{{ item.viewCount }}</span>
       </div>

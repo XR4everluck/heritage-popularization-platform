@@ -147,16 +147,16 @@ function goBanner(banner) {
     <!-- 继续学习 -->
     <div class="section continue-section" v-if="userStore.isLogin && latest">
       <div class="continue-card" @click="router.push(`/course/${latest.courseId}?chapter=${latest.chapterId}`)">
-        <span class="continue-badge">继续学习</span>
+        <span class="continue-badge">接着看</span>
         <el-icon class="continue-icon" :size="26"><VideoPlay /></el-icon>
         <div class="continue-info">
           <div class="continue-course">{{ latest.courseName }}</div>
           <div class="continue-chapter">
-            上次学到：{{ latest.chapterTitle }} · 已学 {{ latest.studyDuration }} 分钟
-            <el-tag v-if="latest.finished" size="small" type="success">本章已完成</el-tag>
+            上次看到：{{ latest.chapterTitle }} · 已看 {{ latest.studyDuration }} 分钟
+            <el-tag v-if="latest.finished" size="small" type="success">本节已完成</el-tag>
           </div>
         </div>
-        <el-button type="danger" plain size="small">接着学&nbsp;<el-icon><ArrowRight /></el-icon></el-button>
+        <el-button type="danger" plain size="small">接着看&nbsp;<el-icon><ArrowRight /></el-icon></el-button>
       </div>
     </div>
 
@@ -204,7 +204,7 @@ function goBanner(banner) {
     <!-- 精品课程 -->
     <div class="section" v-if="hotCourses.length">
       <div class="section-head">
-        <h3 class="section-title">精品课程</h3>
+        <h3 class="section-title">热门科普视频</h3>
       </div>
       <el-row :gutter="16">
         <el-col v-for="course in hotCourses" :key="course.id" :xs="12" :sm="12" :md="8" :lg="6">

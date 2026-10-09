@@ -26,14 +26,14 @@ async function handleLogout() {
     <el-aside width="210px" class="aside">
       <div class="aside-logo">
         <span class="logo-seal aside-seal"><el-icon :size="18"><Collection /></el-icon></span>
-        <span>非遗平台后台</span>
+        <span>非遗科普后台</span>
       </div>
       <el-menu :default-active="activeMenu" router background-color="#2c3e50" text-color="#c8c9cc"
                active-text-color="#ffffff" class="aside-menu">
         <el-menu-item index="/admin/dashboard"><el-icon><DataAnalysis /></el-icon>数据统计</el-menu-item>
         <el-menu-item index="/admin/category"><el-icon><Menu /></el-icon>分类管理</el-menu-item>
         <el-menu-item index="/admin/heritage"><el-icon><Collection /></el-icon>非遗项目管理</el-menu-item>
-        <el-menu-item index="/admin/course"><el-icon><VideoPlay /></el-icon>课程管理</el-menu-item>
+        <el-menu-item index="/admin/course"><el-icon><VideoPlay /></el-icon>科普专题管理</el-menu-item>
         <el-menu-item index="/admin/user"><el-icon><User /></el-icon>用户管理</el-menu-item>
         <el-menu-item index="/admin/comment"><el-icon><ChatDotRound /></el-icon>评论管理</el-menu-item>
         <el-menu-item index="/admin/banner"><el-icon><Picture /></el-icon>轮播图管理</el-menu-item>

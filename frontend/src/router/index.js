@@ -11,7 +11,7 @@ const routes = [
       { path: '', name: 'home', component: () => import('../views/front/Home.vue'), meta: { title: '首页' } },
       { path: 'heritage', name: 'heritageList', component: () => import('../views/front/HeritageList.vue'), meta: { title: '非遗博览' } },
       { path: 'heritage/:id', name: 'heritageDetail', component: () => import('../views/front/HeritageDetail.vue'), meta: { title: '非遗详情' } },
-      { path: 'course/:id', name: 'courseDetail', component: () => import('../views/front/CourseDetail.vue'), meta: { title: '课程学习' } },
+      { path: 'course/:id', name: 'courseDetail', component: () => import('../views/front/CourseDetail.vue'), meta: { title: '科普观看' } },
       { path: 'profile', name: 'profile', component: () => import('../views/front/Profile.vue'), meta: { title: '个人中心', requiresAuth: true } },
       { path: 'login', name: 'login', component: () => import('../views/front/Login.vue'), meta: { title: '登录' } }
     ]
@@ -31,7 +31,7 @@ const routes = [
       { path: 'dashboard', name: 'dashboard', component: () => import('../views/admin/Dashboard.vue'), meta: { title: '数据统计' } },
       { path: 'category', name: 'categoryManage', component: () => import('../views/admin/CategoryManage.vue'), meta: { title: '分类管理' } },
       { path: 'heritage', name: 'heritageManage', component: () => import('../views/admin/HeritageManage.vue'), meta: { title: '非遗项目管理' } },
-      { path: 'course', name: 'courseManage', component: () => import('../views/admin/CourseManage.vue'), meta: { title: '课程管理' } },
+      { path: 'course', name: 'courseManage', component: () => import('../views/admin/CourseManage.vue'), meta: { title: '科普专题管理' } },
       { path: 'user', name: 'userManage', component: () => import('../views/admin/UserManage.vue'), meta: { title: '用户管理' } },
       { path: 'comment', name: 'commentManage', component: () => import('../views/admin/CommentManage.vue'), meta: { title: '评论管理' } },
       { path: 'banner', name: 'bannerManage', component: () => import('../views/admin/BannerManage.vue'), meta: { title: '轮播图管理' } },
@@ -51,7 +51,7 @@ const router = createRouter({
 
 // 全局前置守卫：页面标题 + 登录/角色校验
 router.beforeEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} - 非遗知识教学平台` : '非遗知识教学平台'
+  document.title = to.meta.title ? `${to.meta.title} - 非遗知识科普平台` : '非遗知识科普平台'
   const userStore = useUserStore()
 
   // 个人中心等需登录页面

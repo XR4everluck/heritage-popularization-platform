@@ -27,7 +27,7 @@ function go(path) {
       <div class="header-inner">
         <div class="logo" @click="router.push('/')">
           <span class="logo-seal"><el-icon :size="22"><Collection /></el-icon></span>
-          <span class="logo-text">非遗知识教学平台</span>
+          <span class="logo-text">非遗知识科普平台</span>
         </div>
         <el-menu mode="horizontal" :default-active="activeMenu" :ellipsis="false" router class="nav-menu">
           <el-menu-item index="/">首页</el-menu-item>
@@ -77,7 +77,7 @@ function go(path) {
     </el-main>
 
     <!-- 页脚 -->
-    <el-footer class="footer">非遗知识教学平台 · 传承中华优秀传统文化 · 毕业设计作品</el-footer>
+    <el-footer class="footer">非遗知识科普平台 · 传承中华优秀传统文化 · 毕业设计作品</el-footer>
   </el-container>
 </template>
 

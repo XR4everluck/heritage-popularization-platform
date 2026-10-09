@@ -20,7 +20,7 @@ const saving = ref(false)
 const formRef = ref()
 const form = reactive({ id: null, heritageId: null, name: '', summary: '', cover: '', teacher: '', duration: 60, publishTime: null })
 const rules = {
-  name: [{ required: true, message: '请输入课程名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入科普专题名称', trigger: 'blur' }],
   heritageId: [{ required: true, message: '请选择关联非遗项目', trigger: 'change' }]
 }
 
@@ -33,7 +33,7 @@ const chapterSaving = ref(false)
 const chapterFormRef = ref()
 const chapterForm = reactive({ id: null, title: '', videoUrl: '', content: '', sort: 1 })
 const chapterRules = {
-  title: [{ required: true, message: '请输入章节标题', trigger: 'blur' }]
+  title: [{ required: true, message: '请输入内容标题', trigger: 'blur' }]
 }
 
 onMounted(async () => {
@@ -81,7 +81,7 @@ async function save() {
 }
 
 async function remove(row) {
-  await ElMessageBox.confirm(`确定删除课程【${row.name}】吗？`, '提示', { type: 'warning' })
+  await ElMessageBox.confirm(`确定删除科普专题【${row.name}】吗？`, '提示', { type: 'warning' })
   await courseApi.remove(row.id)
   ElMessage.success('已删除')
   loadData()
@@ -123,7 +123,7 @@ async function saveChapter() {
 }
 
 async function removeChapter(row) {
-  await ElMessageBox.confirm(`确定删除章节【${row.title}】吗？`, '提示', { type: 'warning' })
+  await ElMessageBox.confirm(`确定删除内容【${row.title}】吗？`, '提示', { type: 'warning' })
   await courseApi.chapterRemove(row.id)
   ElMessage.success('已删除')
   openChapters(currentCourse.value)
@@ -136,10 +136,10 @@ async function removeChapter(row) {
       <el-select v-model="query.heritageId" placeholder="全部非遗项目" clearable filterable style="width: 200px" @change="loadData">
         <el-option v-for="h in heritages" :key="h.id" :label="h.name" :value="h.id" />
       </el-select>
-      <el-input v-model="query.keyword" placeholder="课程名称关键词" clearable style="width: 220px"
+      <el-input v-model="query.keyword" placeholder="科普专题名称关键词" clearable style="width: 220px"
                 @keyup.enter="loadData" @clear="loadData" />
       <el-button type="danger" @click="loadData"><el-icon><Search /></el-icon>&nbsp;查询</el-button>
-      <el-button type="primary" plain @click="openAdd"><el-icon><Plus /></el-icon>&nbsp;新增课程</el-button>
+      <el-button type="primary" plain @click="openAdd"><el-icon><Plus /></el-icon>&nbsp;新增科普专题</el-button>
     </div>
 
     <el-table :data="list" v-loading="loading" stripe>
@@ -148,11 +148,11 @@ async function removeChapter(row) {
           <img :src="row.cover || defaultCover(row.name, 120, 80)" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px" />
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="课程名称" min-width="180" show-overflow-tooltip />
+      <el-table-column prop="name" label="科普专题名称" min-width="180" show-overflow-tooltip />
       <el-table-column label="关联非遗" min-width="130">
         <template #default="{ row }">{{ heritageName(row.heritageId) }}</template>
       </el-table-column>
-      <el-table-column prop="teacher" label="讲师" width="130" show-overflow-tooltip />
+      <el-table-column prop="teacher" label="讲解人" width="130" show-overflow-tooltip />
       <el-table-column prop="duration" label="总时长(分)" width="100" align="center" />
       <el-table-column prop="viewCount" label="浏览" width="80" align="center" />
       <el-table-column prop="publishTime" label="发布时间" width="170">
@@ -160,7 +160,7 @@ async function removeChapter(row) {
       </el-table-column>
       <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" type="success" plain @click="openChapters(row)">章节</el-button>
+          <el-button size="small" type="success" plain @click="openChapters(row)">内容</el-button>
           <el-button size="small" type="primary" plain @click="openEdit(row)">编辑</el-button>
           <el-button size="small" type="danger" plain @click="remove(row)">删除</el-button>
         </template>
@@ -172,19 +172,19 @@ async function removeChapter(row) {
                      layout="total, prev, pager, next" background @current-change="loadData" />
     </div>
 
-    <!-- 课程对话框 -->
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑课程' : '新增课程'" width="560px">
+    <!-- 科普专题对话框 -->
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑科普专题' : '新增科普专题'" width="560px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="课程名称" prop="name"><el-input v-model="form.name" maxlength="100" /></el-form-item>
+        <el-form-item label="科普专题名称" prop="name"><el-input v-model="form.name" maxlength="100" /></el-form-item>
         <el-form-item label="关联非遗" prop="heritageId">
           <el-select v-model="form.heritageId" filterable placeholder="选择非遗项目">
             <el-option v-for="h in heritages" :key="h.id" :label="h.name" :value="h.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="讲师"><el-input v-model="form.teacher" maxlength="50" /></el-form-item>
+        <el-form-item label="讲解人"><el-input v-model="form.teacher" maxlength="50" /></el-form-item>
         <el-form-item label="总时长(分)"><el-input-number v-model="form.duration" :min="0" /></el-form-item>
-        <el-form-item label="课程封面"><FileUpload v-model="form.cover" type="image" /></el-form-item>
-        <el-form-item label="课程简介"><el-input v-model="form.summary" type="textarea" :rows="3" maxlength="500" /></el-form-item>
+        <el-form-item label="封面"><FileUpload v-model="form.cover" type="image" /></el-form-item>
+        <el-form-item label="简介"><el-input v-model="form.summary" type="textarea" :rows="3" maxlength="500" /></el-form-item>
         <el-form-item label="发布时间">
           <el-date-picker v-model="form.publishTime" type="datetime" placeholder="留空表示未发布"
                           value-format="YYYY-MM-DD HH:mm:ss" />
@@ -196,14 +196,14 @@ async function removeChapter(row) {
       </template>
     </el-dialog>
 
-    <!-- 章节管理抽屉 -->
-    <el-drawer v-model="drawerVisible" :title="`章节管理 - ${currentCourse?.name || ''}`" size="46%">
+    <!-- 内容管理抽屉 -->
+    <el-drawer v-model="drawerVisible" :title="`内容管理 - ${currentCourse?.name || ''}`" size="46%">
       <el-button type="primary" plain style="margin-bottom: 12px" @click="openChapterAdd">
-        <el-icon><Plus /></el-icon>&nbsp;新增章节
+        <el-icon><Plus /></el-icon>&nbsp;新增内容
       </el-button>
       <el-table :data="chapters" stripe>
         <el-table-column prop="sort" label="序号" width="60" align="center" />
-        <el-table-column prop="title" label="章节标题" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="title" label="内容标题" min-width="180" show-overflow-tooltip />
         <el-table-column label="视频" width="110" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.videoUrl" size="small" :type="/bilibili|b23\.tv/.test(row.videoUrl) ? 'warning' : 'success'">
@@ -221,11 +221,11 @@ async function removeChapter(row) {
       </el-table>
 
       <!-- 章节对话框 -->
-      <el-dialog v-model="chapterDialogVisible" :title="chapterForm.id ? '编辑章节' : '新增章节'" width="520px" append-to-body>
+      <el-dialog v-model="chapterDialogVisible" :title="chapterForm.id ? '编辑内容' : '新增内容'" width="520px" append-to-body>
         <el-form ref="chapterFormRef" :model="chapterForm" :rules="chapterRules" label-width="90px">
-          <el-form-item label="章节标题" prop="title"><el-input v-model="chapterForm.title" maxlength="100" /></el-form-item>
+          <el-form-item label="内容标题" prop="title"><el-input v-model="chapterForm.title" maxlength="100" /></el-form-item>
           <el-form-item label="排序号"><el-input-number v-model="chapterForm.sort" :min="0" /></el-form-item>
-          <el-form-item label="章节视频">
+          <el-form-item label="视频">
             <div style="width: 100%">
               <FileUpload v-model="chapterForm.videoUrl" type="video" width="280px" height="150px" />
               <el-input v-model="chapterForm.videoUrl" clearable placeholder="或直接粘贴视频外链地址"

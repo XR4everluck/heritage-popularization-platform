@@ -99,9 +99,9 @@ async function loadCourseStats() {
 function videoLabel(courseId) {
   const stat = courseStats.value[courseId]
   if (!stat || !stat.total) return null
-  if (stat.videos === 0) return { text: `图文课程 · ${stat.total} 章`, type: 'info' }
-  if (stat.videos === stat.total) return { text: `视频教学 · ${stat.total} 章`, type: 'success' }
-  return { text: `视频 ${stat.videos}/${stat.total} 章`, type: 'warning' }
+  if (stat.videos === 0) return { text: `图文科普 · ${stat.total} 节`, type: 'info' }
+  if (stat.videos === stat.total) return { text: `视频科普 · ${stat.total} 节`, type: 'success' }
+  return { text: `视频 ${stat.videos}/${stat.total} 节`, type: 'warning' }
 }
 
 async function loadComments() {
@@ -265,8 +265,8 @@ async function submitComment() {
 
         <!-- 相关课程（紧凑列表） -->
         <el-card shadow="never" class="side-card">
-          <template #header><b>相关课程（{{ courses.length }}）</b></template>
-          <el-empty v-if="!courses.length" description="暂无课程" :image-size="50" />
+          <template #header><b>相关科普视频（{{ courses.length }}）</b></template>
+          <el-empty v-if="!courses.length" description="暂无科普视频" :image-size="50" />
           <div v-for="course in courses" :key="course.id" class="side-course"
                @click="router.push(`/course/${course.id}`)">
             <img :src="course.cover || defaultCover(course.name, 160, 100)" class="side-course-cover" />

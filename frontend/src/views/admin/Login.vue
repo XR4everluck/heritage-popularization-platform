@@ -43,7 +43,7 @@ async function handleLogin() {
     <div class="login-card">
       <div class="head">
         <el-icon :size="34" color="#c0392b"><DataAnalysis /></el-icon>
-        <h2>非遗平台 · 后台管理</h2>
+        <h2>非遗科普 · 后台管理</h2>
       </div>
       <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="handleLogin">
         <el-form-item prop="username">

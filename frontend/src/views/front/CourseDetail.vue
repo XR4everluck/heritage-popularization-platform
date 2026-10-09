@@ -60,11 +60,11 @@ const memKey = (chapterId) => `heritage_art_progress_${chapterId}`
 
 /** 演示弹幕（本地视频无弹幕源，内置少量氛围弹幕供弹幕开关演示） */
 const DEMO_DANMUS = [
-  { time: 2, text: '欢迎来到非遗课堂～', color: '#ffffff' },
+  { time: 2, text: '欢迎来到非遗科普～', color: '#ffffff' },
   { time: 6, text: '传承中华优秀传统文化！', color: '#d4af37' },
   { time: 12, text: '为国风打 call', color: '#c0392b' },
-  { time: 20, text: '先码后看，认真学起来', color: '#ffffff' },
-  { time: 30, text: '老师讲得真好', color: '#ffffff' }
+  { time: 20, text: '先码后看，一起涨知识', color: '#ffffff' },
+  { time: 30, text: '讲解太精彩了', color: '#ffffff' }
 ]
 
 /** 初始化 ArtPlayer：挂载到 playerRef 容器并恢复上次播放位置 */
@@ -202,7 +202,7 @@ async function reportProgress(finished) {
       finished: finished ? 1 : undefined
     })
     playedSeconds.value = 0
-    if (finished) ElMessage.success('已完成本章节学习')
+    if (finished) ElMessage.success('已完成本节观看')
     const res = await getMyProgress({ courseId: route.params.id })
     myProgress.value = res.data
   } catch {
@@ -217,7 +217,7 @@ async function reportProgress(finished) {
 <template>
   <!-- 课程不存在/已被删除时的友好空状态 -->
   <el-card v-if="notFound" shadow="never" class="notfound-card">
-    <el-empty description="课程不存在或已被删除">
+    <el-empty description="科普专题不存在或已被删除">
       <el-button type="danger" @click="router.push('/heritage')">去逛逛非遗项目</el-button>
     </el-empty>
   </el-card>
@@ -233,9 +233,9 @@ async function reportProgress(finished) {
           <h2>{{ course.name }}</h2>
           <div class="course-desc">{{ course.summary }}</div>
           <div class="course-meta">
-            <span>讲师：{{ course.teacher || '-' }}</span>
+            <span>讲解人：{{ course.teacher || '-' }}</span>
             <span>总时长：{{ course.duration }} 分钟</span>
-            <span>章节数：{{ chapters.length }}</span>
+            <span>内容数：{{ chapters.length }}</span>
             <span>浏览：{{ course.viewCount }}</span>
           </div>
         </div>
@@ -245,7 +245,7 @@ async function reportProgress(finished) {
     <div class="study-body">
       <!-- 视频播放区 -->
       <el-card shadow="never" class="player-card">
-        <template #header><b>正在学习：{{ currentChapter?.title || '暂无章节' }}</b></template>
+        <template #header><b>正在观看：{{ currentChapter?.title || '暂无内容' }}</b></template>
         <!-- B站外链视频：使用官方播放器内嵌播放 -->
         <iframe v-if="currentChapter?.videoUrl && isBili" :key="'bili-' + currentChapter.id"
                 :src="biliEmbed" scrolling="no" frameborder="0" allowfullscreen
@@ -262,35 +262,36 @@ async function reportProgress(finished) {
           </div>
         </div>
         <div v-else class="player-placeholder">
-          <el-empty :description="currentChapter ? '本章节视频暂未上传，可先阅读图文讲义' : '暂无章节内容'" :image-size="80" />
+          <el-empty :description="currentChapter ? '本节视频暂未上传，可先阅读图文讲义' : '暂无内容'" :image-size="80" />
         </div>
         <!-- 兜底提示（独立于上方 v-if 链，避免打断条件分支） -->
         <div v-if="currentChapter?.videoUrl && isExternalPage" class="external-tip">
-          本章节为外部视频链接，若上方播放器无法解码，
+          本节内容为外部视频链接，若上方播放器无法解码，
           <el-link type="danger" :href="currentChapter.videoUrl" target="_blank" class="external-link">在新窗口打开观看&nbsp;<el-icon><TopRight /></el-icon></el-link>
         </div>
         <div v-if="currentChapter?.content" class="rich-content chapter-content" v-html="currentChapter.content"></div>
         <div class="study-actions">
-          <span class="study-tip">观看视频时长会自动累计到学习进度</span>
-          <el-button type="danger" plain @click="reportProgress(true)"><el-icon><CircleCheck /></el-icon>&nbsp;标记本章节完成</el-button>
+          <span class="study-tip">观看视频时长会自动累计到观看记录</span>
+          <el-button type="danger" plain @click="reportProgress(true)"><el-icon><CircleCheck /></el-icon>&nbsp;标记本节完成</el-button>
         </div>
       </el-card>
 
       <!-- 章节目录 -->
       <el-card shadow="never" class="chapter-card">
-        <template #header><b>章节目录</b></template>
+        <template #header><b>内容目录</b></template>
         <div v-for="(chapter, index) in chapters" :key="chapter.id" class="chapter-item"
              :class="{ active: currentChapter?.id === chapter.id }" @click="selectChapter(chapter)">
           <span class="chapter-index">{{ index + 1 }}</span>
           <span class="chapter-title">{{ chapter.title }}</span>
           <el-tag v-if="index === 0" size="small" type="success" effect="light">免费试看</el-tag>
+	          <el-tag v-if="progressOfChapter[chapter.id]?.finished" size="small" type="success">已完成</el-tag>
           <el-tag v-if="progressOfChapter[chapter.id]?.finished" size="small" type="success">已完成</el-tag>
           <span v-else-if="progressOfChapter[chapter.id]" class="chapter-duration">
             {{ progressOfChapter[chapter.id].studyDuration }} 分钟
           </span>
         </div>
-        <el-empty v-if="!chapters.length" description="暂无章节" :image-size="60" />
-        <div v-if="!userStore.isLogin" class="login-tip">登录后可记录学习进度</div>
+        <el-empty v-if="!chapters.length" description="暂无内容" :image-size="60" />
+        <div v-if="!userStore.isLogin" class="login-tip">登录后可记录观看记录</div>
       </el-card>
     </div>
   </div>

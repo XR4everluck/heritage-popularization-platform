@@ -8,7 +8,7 @@ import { heritageApi, courseApi, userApi, commentApi } from '../../api/admin'
 const stats = ref([
   { title: '用户总数', value: 0, icon: 'User', color: '#409eff' },
   { title: '非遗项目', value: 0, icon: 'Collection', color: '#c0392b' },
-  { title: '课程总数', value: 0, icon: 'VideoPlay', color: '#67c23a' },
+  { title: '科普专题', value: 0, icon: 'VideoPlay', color: '#67c23a' },
   { title: '评论总数', value: 0, icon: 'ChatDotRound', color: '#e6a23c' }
 ])
 
@@ -42,8 +42,8 @@ onMounted(async () => {
       </el-col>
     </el-row>
     <el-card shadow="never" class="welcome-card">
-      <h3>欢迎使用非遗知识教学平台管理系统</h3>
-      <p class="tip">左侧菜单可进入各管理模块：分类、非遗项目、课程与章节、用户、评论、轮播图、公告。</p>
+      <h3>欢迎使用非遗知识科普平台管理系统</h3>
+      <p class="tip">左侧菜单可进入各管理模块：分类、非遗项目、科普专题与内容、用户、评论、轮播图、公告。</p>
     </el-card>
   </div>
 </template>

@@ -21,7 +21,7 @@ function splitTitle(title = '') {
   if (m.length >= 2) {
     return { main: m[0].trim(), sub: m.slice(1).join('，').trim() }
   }
-  return { main: title.trim(), sub: '非遗知识教学平台 · 传承中华优秀传统文化' }
+  return { main: title.trim(), sub: '非遗知识科普平台 · 传承中华优秀传统文化' }
 }
 
 function startTimer() {
