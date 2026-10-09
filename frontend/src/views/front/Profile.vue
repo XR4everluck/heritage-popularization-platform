@@ -6,35 +6,39 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyCollections, removeCollection, getMyComments, deleteMyComment,
-         getMyProgress, getCourseChapters } from '../../api/front'
+         getMyProgress, getCourseChapters, getTotalScore } from '../../api/front'
 import { getProfile, updateProfile } from '../../api/user'
 import { useUserStore } from '../../store/user'
 import FileUpload from '../../components/FileUpload.vue'
 import { defaultCover } from '../../utils/placeholder'
+import { Award } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeTab = ref('collection')
-// 我的收藏
-const collections = ref([])
-// 我的评论
-const comments = ref([])
-const commentTotal = ref(0)
-const commentPage = ref(1)
-// 我的学习
-const progressList = ref([])
-// 各课程总章节数：{ [课程id]: 章节数 }，用于计算完成度
-const courseTotals = ref({})
-// 个人资料
-const profileForm = ref({ nickname: '', phone: '', email: '', avatar: '', introduction: '' })
-const saving = ref(false)
+  // 我的收藏
+  const collections = ref([])
+  // 我的评论
+  const comments = ref([])
+  const commentTotal = ref(0)
+  const commentPage = ref(1)
+  // 我的学习
+  const progressList = ref([])
+  // 各课程总章节数：{ [课程id]: 章节数 }，用于计算完成度
+  const courseTotals = ref({})
+  // 个人资料
+  const profileForm = ref({ nickname: '', phone: '', email: '', avatar: '', introduction: '' })
+  const saving = ref(false)
+  // 我的积分
+  const totalScore = ref(0)
 
 onMounted(() => {
   loadCollections()
   loadComments()
   loadProgress()
   loadProfile()
+  loadTotalScore()
 })
 
 async function loadCollections() {
@@ -115,6 +119,16 @@ async function loadProfile() {
   profileForm.value = { nickname, phone, email, avatar, introduction }
 }
 
+async function loadTotalScore() {
+  try {
+    const res = await getTotalScore()
+    totalScore.value = res.data || 0
+  } catch (error) {
+    console.error('获取积分失败:', error)
+    totalScore.value = 0
+  }
+}
+
 async function cancelCollect(row) {
   await ElMessageBox.confirm(`确定取消收藏《${row.name}》吗？`, '提示', { type: 'warning' })
   await removeCollection(row.heritageId)
@@ -157,6 +171,10 @@ async function saveProfile() {
     <el-card shadow="never" class="stat-card">
       <div class="stat-num" :style="{ color: 'var(--gq-secondary)' }">{{ studyStats.streakDays }} 天</div>
       <div class="stat-label"><el-icon><Sunny /></el-icon> 连续观看天数</div>
+    </el-card>
+    <el-card shadow="never" class="stat-card">
+      <div class="stat-num" :style="{ color: 'var(--gq-danger)' }">{{ totalScore || 0 }}</div>
+      <div class="stat-label"><el-icon><Award /></el-icon> 我的积分</div>
     </el-card>
   </div>
 

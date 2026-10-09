@@ -94,8 +94,33 @@ export function getLatestProgress() {
   return request.get('/api/progress/latest')
 }
 
+// ---------- 非遗小测验相关接口 ----------
+export function getRandomQuestions(heritageId) {
+  return request.get('/api/quiz/random-questions', { params: { heritageId } })
+}
+
+export function submitAnswer(data) {
+  return request.post('/api/quiz/submit', data)
+}
+
+export function getQuizRecords(userId) {
+  return request.get('/api/quiz/records', { params: { userId } })
+}
+
+export function getTotalScore() {
+  return request.get('/api/quiz/total-score')
+}
+
 export function getRecommend(params) {
   return request.get('/api/heritage/recommend', { params })
+}
+
+export function getInheritorList() {
+  return request.get('/api/inheritor/list')
+}
+
+export function getInheritorDetail(id) {
+  return request.get(`/api/inheritor/${id}`)
 }
 
 // 随机获取一条非遗冷知识（首页「今日非遗」板块）

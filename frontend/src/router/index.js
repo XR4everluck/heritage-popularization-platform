@@ -12,6 +12,8 @@ const routes = [
       { path: 'heritage', name: 'heritageList', component: () => import('../views/front/HeritageList.vue'), meta: { title: '非遗博览' } },
       { path: 'heritage/:id', name: 'heritageDetail', component: () => import('../views/front/HeritageDetail.vue'), meta: { title: '非遗详情' } },
       { path: 'course/:id', name: 'courseDetail', component: () => import('../views/front/CourseDetail.vue'), meta: { title: '科普观看' } },
+      { path: 'inheritor', name: 'inheritorList', component: () => import('../views/front/InheritorList.vue'), meta: { title: '传承人专题' } },
+      { path: 'inheritor/:id', name: 'inheritorDetail', component: () => import('../views/front/InheritorDetail.vue'), meta: { title: '传承人详情' } },
       { path: 'profile', name: 'profile', component: () => import('../views/front/Profile.vue'), meta: { title: '个人中心', requiresAuth: true } },
       { path: 'login', name: 'login', component: () => import('../views/front/Login.vue'), meta: { title: '登录' } }
     ]
@@ -35,7 +37,8 @@ const routes = [
       { path: 'user', name: 'userManage', component: () => import('../views/admin/UserManage.vue'), meta: { title: '用户管理' } },
       { path: 'comment', name: 'commentManage', component: () => import('../views/admin/CommentManage.vue'), meta: { title: '评论管理' } },
       { path: 'banner', name: 'bannerManage', component: () => import('../views/admin/BannerManage.vue'), meta: { title: '轮播图管理' } },
-      { path: 'notice', name: 'noticeManage', component: () => import('../views/admin/NoticeManage.vue'), meta: { title: '公告管理' } }
+      { path: 'notice', name: 'noticeManage', component: () => import('../views/admin/NoticeManage.vue'), meta: { title: '公告管理' } },
+      { path: 'inheritor', name: 'inheritorManage', component: () => import('../views/admin/InheritorManage.vue'), meta: { title: '传承人管理' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }
