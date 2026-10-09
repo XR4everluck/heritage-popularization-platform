@@ -15,7 +15,8 @@ public interface HeritageInfoService extends IService<HeritageInfo> {
      *
      * @param onlyPublished true 时仅返回已发布（publish_time 非空）的项目，前台用；false 全量，后台用
      */
-    Page<HeritageVO> pageWithCategory(Page<HeritageInfo> page, Long categoryId, String keyword, String level, boolean onlyPublished);
+    Page<HeritageVO> pageWithCategory(Page<HeritageInfo> page, Long categoryId, String keyword,
+                                       String level, String region, Integer isNews, boolean onlyPublished);
 
     /**
      * 查询非遗详情并组装分类名称；不存在或（仅前台时）未发布均视为资源不存在

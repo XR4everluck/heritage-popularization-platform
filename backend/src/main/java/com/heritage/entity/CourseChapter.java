@@ -42,6 +42,10 @@ public class CourseChapter {
     @TableField("sort")
     private Integer sort;
 
+    /** 内容形态：video(视频)、article(图文)、audio(音频) */
+    @TableField("content_type")
+    private String contentType;
+
     /** 创建时间 */
     @TableField("create_time")
     private Date createTime;

@@ -22,7 +22,7 @@ const formRef = ref()
 const form = reactive({
   id: null, categoryId: null, name: '', level: '国家级', region: '', inheritor: '',
   summary: '', content: '', coverImage: '', publishTime: null,
-  originAge: '', distributionArea: '', representativeWorks: '', endangerLevel: '状况良好'
+  originAge: '', distributionArea: '', representativeWorks: '', endangerLevel: '状况良好', isNews: 0
 })
 
 const rules = {
@@ -110,7 +110,7 @@ function openAdd() {
   Object.assign(form, {
     id: null, categoryId: null, name: '', level: '国家级', region: '', inheritor: '',
     summary: '', content: '', coverImage: '', publishTime: null,
-    originAge: '', distributionArea: '', representativeWorks: '', endangerLevel: '状况良好'
+    originAge: '', distributionArea: '', representativeWorks: '', endangerLevel: '状况良好', isNews: 0
   })
   dialogVisible.value = true
 }
@@ -178,6 +178,12 @@ async function remove(row) {
           <el-tag v-if="row.endangerLevel" size="small"
                   :type="row.endangerLevel === '濒危' ? 'danger' : row.endangerLevel === '急需保护' ? 'danger' : row.endangerLevel === '脆弱' ? 'warning' : 'success'"
                   effect="plain">{{ row.endangerLevel }}</el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="快讯" width="70" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.isNews === 1" size="small" type="danger" effect="dark">快讯</el-tag>
           <span v-else>-</span>
         </template>
       </el-table-column>
@@ -253,6 +259,9 @@ async function remove(row) {
         <el-form-item label="代表作品">
           <el-input v-model="form.representativeWorks" maxlength="500"
                     placeholder="多个作品用、分隔，如：《牡丹亭》《长生殿》" />
+        </el-form-item>
+        <el-form-item label="科普快讯">
+          <el-switch v-model="form.isNews" :active-value="1" :inactive-value="0" active-text="是" inactive-text="否" />
         </el-form-item>
         <el-form-item label="封面图片"><FileUpload v-model="form.coverImage" type="image" /></el-form-item>
         <el-form-item label="简介"><el-input v-model="form.summary" type="textarea" :rows="2" maxlength="500" /></el-form-item>

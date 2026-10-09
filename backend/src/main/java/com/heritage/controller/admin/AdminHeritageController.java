@@ -33,11 +33,13 @@ public class AdminHeritageController {
     private final HeritageHistoryService heritageHistoryService;
 
     /**
-     * 分页查询非遗项目列表（含未发布，支持分类/关键词/级别筛选）
+     * 分页查询非遗项目列表（含未发布，支持分类/关键词/级别/地区/快讯筛选）
      *
      * @param categoryId 分类ID（可空）
      * @param keyword    名称关键词（可空）
      * @param level      非遗级别：国家级/省级/市级（可空）
+     * @param region     所属地区（可空，模糊匹配）
+     * @param isNews     是否为科普快讯：0/1（可空）
      * @param page       页码，默认 1
      * @param pageSize   每页条数，默认 10
      */
@@ -45,10 +47,12 @@ public class AdminHeritageController {
     public Result<Page<HeritageVO>> page(@RequestParam(required = false) Long categoryId,
                                          @RequestParam(required = false) String keyword,
                                          @RequestParam(required = false) String level,
+                                         @RequestParam(required = false) String region,
+                                         @RequestParam(required = false) Integer isNews,
                                          @RequestParam(defaultValue = "1") Integer page,
                                          @RequestParam(defaultValue = "10") Integer pageSize) {
         return Result.ok(heritageInfoService.pageWithCategory(new Page<>(page, pageSize),
-                categoryId, keyword, level, false));
+                categoryId, keyword, level, region, isNews, false));
     }
 
     /**

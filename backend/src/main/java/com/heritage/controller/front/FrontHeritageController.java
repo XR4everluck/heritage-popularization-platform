@@ -1,10 +1,13 @@
 package com.heritage.controller.front;
 
 import com.heritage.common.Result;
+import com.heritage.common.ResultCode;
 import com.heritage.entity.HeritageHistory;
 import com.heritage.entity.HeritageInfo;
+import com.heritage.entity.HeritageTip;
 import com.heritage.service.HeritageHistoryService;
 import com.heritage.service.HeritageInfoService;
+import com.heritage.service.HeritageTipService;
 import com.heritage.vo.HeritageVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +22,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 /**
- * 前台非遗项目接口：分页检索（分类/关键词/级别）、详情、历史节点、浏览量自增、同类随机推荐
+ * 前台非遗项目接口：分页检索（分类/关键词/级别/地区/快讯）、详情、历史节点、浏览量自增、同类随机推荐、冷知识
  */
 @RestController
 @RequestMapping("/api/heritage")
@@ -30,12 +33,16 @@ public class FrontHeritageController {
 
     private final HeritageHistoryService heritageHistoryService;
 
+    private final HeritageTipService heritageTipService;
+
     /**
-     * 分页查询非遗列表（仅已发布），支持分类筛选、关键词搜索、级别筛选
+     * 分页查询非遗列表（仅已发布），支持分类/关键词/级别/地区/快讯筛选
      *
      * @param categoryId 分类ID（可空）
      * @param keyword    名称关键词（可空，模糊匹配）
      * @param level      非遗级别：国家级/省级/市级（可空）
+     * @param region     所属地区（可空，模糊匹配）
+     * @param isNews     是否为科普快讯：0/1（可空）
      * @param page       页码，默认 1
      * @param pageSize   每页条数，默认 10
      */
@@ -43,10 +50,12 @@ public class FrontHeritageController {
     public Result<Page<HeritageVO>> page(@RequestParam(required = false) Long categoryId,
                                          @RequestParam(required = false) String keyword,
                                          @RequestParam(required = false) String level,
+                                         @RequestParam(required = false) String region,
+                                         @RequestParam(required = false) Integer isNews,
                                          @RequestParam(defaultValue = "1") Integer page,
                                          @RequestParam(defaultValue = "10") Integer pageSize) {
         return Result.ok(heritageInfoService.pageWithCategory(new Page<>(page, pageSize),
-                categoryId, keyword, level, true));
+                categoryId, keyword, level, region, isNews, true));
     }
 
     /**
@@ -100,5 +109,15 @@ public class FrontHeritageController {
                 .last("ORDER BY RAND() LIMIT " + safeLimit)
                 .list();
         return Result.ok(list);
+    }
+
+    /**
+     * 随机获取一条非遗冷知识（首页「今日非遗」板块使用）
+     *
+     * @param heritageId 非遗项目ID（可空，空时从全部冷知识中随机）
+     */
+    @GetMapping("/tip")
+    public Result<HeritageTip> randomTip(@RequestParam(required = false) Long heritageId) {
+        return Result.ok(heritageTipService.randomOne(heritageId));
     }
 }

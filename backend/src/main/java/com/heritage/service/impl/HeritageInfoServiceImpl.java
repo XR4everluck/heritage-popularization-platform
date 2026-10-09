@@ -31,11 +31,14 @@ public class HeritageInfoServiceImpl extends ServiceImpl<HeritageInfoMapper, Her
     private final HeritageCategoryService heritageCategoryService;
 
     @Override
-    public Page<HeritageVO> pageWithCategory(Page<HeritageInfo> page, Long categoryId, String keyword, String level, boolean onlyPublished) {
+    public Page<HeritageVO> pageWithCategory(Page<HeritageInfo> page, Long categoryId, String keyword,
+                                              String level, String region, Integer isNews, boolean onlyPublished) {
         LambdaQueryWrapper<HeritageInfo> qw = new LambdaQueryWrapper<>();
         qw.eq(categoryId != null, HeritageInfo::getCategoryId, categoryId)
                 .like(StrUtil.isNotBlank(keyword), HeritageInfo::getName, keyword)
                 .eq(StrUtil.isNotBlank(level), HeritageInfo::getLevel, level)
+                .like(StrUtil.isNotBlank(region), HeritageInfo::getRegion, region)
+                .eq(isNews != null, HeritageInfo::getIsNews, isNews)
                 .isNotNull(onlyPublished, HeritageInfo::getPublishTime)
                 .orderByDesc(HeritageInfo::getPublishTime)
                 .orderByDesc(HeritageInfo::getId);

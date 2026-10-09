@@ -282,9 +282,13 @@ async function reportProgress(finished) {
         <div v-for="(chapter, index) in chapters" :key="chapter.id" class="chapter-item"
              :class="{ active: currentChapter?.id === chapter.id }" @click="selectChapter(chapter)">
           <span class="chapter-index">{{ index + 1 }}</span>
+          <!-- 内容形态图标 -->
+          <el-icon v-if="chapter.contentType === 'video'" class="type-icon" color="#c0392b"><VideoCamera /></el-icon>
+          <el-icon v-else-if="chapter.contentType === 'article'" class="type-icon" color="#2c3e50"><Document /></el-icon>
+          <el-icon v-else-if="chapter.contentType === 'audio'" class="type-icon" color="#d4af37"><Headset /></el-icon>
+          <el-icon v-else class="type-icon" color="#c0392b"><VideoCamera /></el-icon>
           <span class="chapter-title">{{ chapter.title }}</span>
           <el-tag v-if="index === 0" size="small" type="success" effect="light">免费试看</el-tag>
-	          <el-tag v-if="progressOfChapter[chapter.id]?.finished" size="small" type="success">已完成</el-tag>
           <el-tag v-if="progressOfChapter[chapter.id]?.finished" size="small" type="success">已完成</el-tag>
           <span v-else-if="progressOfChapter[chapter.id]" class="chapter-duration">
             {{ progressOfChapter[chapter.id].studyDuration }} 分钟
@@ -468,6 +472,9 @@ async function reportProgress(finished) {
 .chapter-title {
   flex: 1;
   font-size: 14px;
+}
+.type-icon {
+  flex-shrink: 0;
 }
 .chapter-duration {
   color: #c0c4cc;

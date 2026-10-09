@@ -1,11 +1,11 @@
 <script setup>
 /**
- * 首页：轮播图 + 搜索框(热门标签) + 继续学习 + 分类导航 + 精品课程 + 非遗博览 + 猜你喜欢 + 最新公告
+ * 首页（科普杂志风格）：轮播图 + 搜索 + 今日非遗冷知识 + 分类导航 + 热门科普视频(横滚) + 非遗快讯 + 猜你喜欢 + 最新公告
  */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBanners, getCategoryList, getHeritagePage, getNoticePage, getNoticeDetail,
-         getHotCourses, getLatestProgress, getRecommend } from '../../api/front'
+         getHotCourses, getLatestProgress, getRecommend, getRandomTip } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
@@ -28,24 +28,31 @@ const keyword = ref('')
 const latest = ref(null)
 const loadFailed = ref(false)
 
-// 热门搜索标签（点击直达列表页并自动搜索）
+// 今日非遗冷知识
+const dailyTip = ref(null)
+
+// 非遗快讯（is_news=1）
+const newsList = ref([])
+
+// 热门搜索标签
 const HOT_KEYWORDS = ['昆曲', '剪纸', '皮影戏', '二十四节气']
 
 onMounted(loadAll)
 
-/** 首屏数据加载：整体失败时展示错误引导（避免骨架屏卡死），支持重试 */
+/** 首屏数据加载 */
 async function loadAll() {
   loading.value = true
   loadFailed.value = false
   try {
-    const [b, c, h, n, courses, recommend] = await Promise.all([
+    const [b, c, h, n, courses, recommend, news, tip] = await Promise.all([
       getBanners(),
       getCategoryList(),
       getHeritagePage({ page: 1, pageSize: 8 }),
       getNoticePage({ page: 1, pageSize: 5 }),
-      // 热门课程/推荐接口失败不阻塞首页其他板块
-      getHotCourses(4).catch(() => ({ data: [] })),
-      getRecommend({ limit: 4 }).catch(() => ({ data: [] }))
+      getHotCourses(8).catch(() => ({ data: [] })),
+      getRecommend({ limit: 4 }).catch(() => ({ data: [] })),
+      getHeritagePage({ page: 1, pageSize: 6, isNews: 1 }).catch(() => ({ data: { records: [] } })),
+      getRandomTip().catch(() => ({ data: null }))
     ])
     banners.value = b.data
     categories.value = c.data
@@ -53,8 +60,9 @@ async function loadAll() {
     heritageList.value = h.data.records
     recommendList.value = recommend.data
     notices.value = n.data.records
+    newsList.value = news.data.records
+    dailyTip.value = tip.data
   } catch (e) {
-    // 后端不可用/数据库异常：给出明确提示与重试入口
     loadFailed.value = true
   } finally {
     loading.value = false
@@ -62,7 +70,7 @@ async function loadAll() {
   loadLatest()
 }
 
-/** 加载最近学习记录（仅登录用户；失败静默） */
+/** 加载最近观看记录（仅登录用户；失败静默） */
 async function loadLatest() {
   if (!userStore.isLogin) return
   try {
@@ -73,21 +81,29 @@ async function loadLatest() {
   }
 }
 
-/** 搜索：跳转非遗列表页并携带关键词（列表页监听 query 自动搜索） */
+/** 刷新冷知识 */
+async function refreshTip() {
+  try {
+    const res = await getRandomTip()
+    dailyTip.value = res.data
+  } catch { /* ignore */ }
+}
+
+/** 搜索 */
 function goSearch(kw) {
   const word = (kw ?? keyword.value ?? '').trim()
   if (!word) return
   router.push({ path: '/heritage', query: { keyword: word } })
 }
 
-/** 查看公告详情（弹窗展示） */
+/** 查看公告详情 */
 async function showNotice(notice) {
   const res = await getNoticeDetail(notice.id)
   noticeDetail.value = res.data
   noticeVisible.value = true
 }
 
-/** 轮播图点击跳转：站内路由用 router，外链新窗口打开 */
+/** 轮播图点击跳转 */
 function goBanner(banner) {
   if (!banner.linkUrl) return
   if (/^https?:\/\//i.test(banner.linkUrl)) {
@@ -96,20 +112,25 @@ function goBanner(banner) {
     router.push(banner.linkUrl)
   }
 }
+
+/** 热门科普视频横向滚动 */
+const hotScrollRef = ref(null)
+function scrollHot(dir) {
+  const el = hotScrollRef.value
+  if (!el) return
+  el.scrollBy({ left: dir * 320, behavior: 'smooth' })
+}
 </script>
 
 <template>
   <div class="home">
-    <!-- 骨架屏（首屏数据加载中） -->
+    <!-- 骨架屏 -->
     <div v-if="loading" class="home-skeleton">
       <el-skeleton animated style="width: 100%">
         <template #template>
           <el-skeleton-item variant="image" style="width: 100%; height: 380px; border-radius: 12px" />
           <div style="display: flex; gap: 16px; margin-top: 24px">
             <el-skeleton-item v-for="i in 4" :key="i" variant="image" style="flex: 1; height: 220px; border-radius: 12px" />
-          </div>
-          <div style="display: flex; gap: 16px; margin-top: 24px">
-            <el-skeleton-item v-for="i in 4" :key="'b' + i" variant="image" style="flex: 1; height: 220px; border-radius: 12px" />
           </div>
         </template>
       </el-skeleton>
@@ -124,7 +145,7 @@ function goBanner(banner) {
     </el-card>
 
     <template v-else>
-    <!-- 国风淡入淡出轮播图 -->
+    <!-- 轮播图 -->
     <BannerCarousel :banners="banners" :open="goBanner" />
 
     <!-- 搜索框 + 热门搜索 -->
@@ -144,7 +165,16 @@ function goBanner(banner) {
       </div>
     </div>
 
-    <!-- 继续学习 -->
+    <!-- 今日非遗·冷知识 -->
+    <div class="section" v-if="dailyTip">
+      <div class="tip-card">
+        <div class="tip-badge"><el-icon><MagicStick /></el-icon> 今日非遗</div>
+        <div class="tip-content">{{ dailyTip.content }}</div>
+        <el-button text type="danger" @click="refreshTip"><el-icon><RefreshRight /></el-icon>&nbsp;换一条</el-button>
+      </div>
+    </div>
+
+    <!-- 接着看 -->
     <div class="section continue-section" v-if="userStore.isLogin && latest">
       <div class="continue-card" @click="router.push(`/course/${latest.courseId}?chapter=${latest.chapterId}`)">
         <span class="continue-badge">接着看</span>
@@ -160,7 +190,7 @@ function goBanner(banner) {
       </div>
     </div>
 
-    <!-- 分类导航（国风线性图标 + hover 水波纹） -->
+    <!-- 分类导航 -->
     <div class="section">
       <h3 class="section-title">非遗分类</h3>
       <div class="category-grid">
@@ -172,45 +202,41 @@ function goBanner(banner) {
       </div>
     </div>
 
-    <div class="home-body">
-      <!-- 推荐非遗 -->
-      <div class="section main-section">
-        <div class="section-head">
-          <h3 class="section-title">非遗博览</h3>
-          <el-link type="danger" @click="router.push('/heritage')">更多 &gt;</el-link>
-        </div>
-        <el-row :gutter="16">
-          <el-col v-for="item in heritageList" :key="item.id" :xs="12" :sm="12" :md="8" :lg="6">
-            <HeritageCard :item="item" class="grid-card"
-                          @open="router.push(`/heritage/${item.id}`)" />
-          </el-col>
-        </el-row>
-      </div>
-
-      <!-- 最新公告 -->
-      <div class="section notice-section">
-        <h3 class="section-title">最新公告</h3>
-        <el-card shadow="never">
-          <div v-for="notice in notices" :key="notice.id" class="notice-item" @click="showNotice(notice)">
-            <el-icon color="#c0392b"><Bell /></el-icon>
-            <span class="notice-title">{{ notice.title }}</span>
-            <span class="notice-date">{{ (notice.publishTime || '').slice(0, 10) }}</span>
-          </div>
-          <el-empty v-if="!notices.length" description="暂无公告" :image-size="60" />
-        </el-card>
-      </div>
-    </div>
-
-    <!-- 精品课程 -->
+    <!-- 热门科普视频（横向滚动卡片） -->
     <div class="section" v-if="hotCourses.length">
       <div class="section-head">
         <h3 class="section-title">热门科普视频</h3>
+        <div class="scroll-arrows">
+          <el-button circle size="small" @click="scrollHot(-1)"><el-icon><ArrowLeft /></el-icon></el-button>
+          <el-button circle size="small" @click="scrollHot(1)"><el-icon><ArrowRight /></el-icon></el-button>
+        </div>
       </div>
-      <el-row :gutter="16">
-        <el-col v-for="course in hotCourses" :key="course.id" :xs="12" :sm="12" :md="8" :lg="6">
-          <CourseCard :item="course" class="grid-card" @open="router.push(`/course/${course.id}`)" />
-        </el-col>
-      </el-row>
+      <div class="hot-scroll-wrap">
+        <div ref="hotScrollRef" class="hot-scroll">
+          <CourseCard v-for="course in hotCourses" :key="course.id" :item="course" class="hot-card"
+                      @open="router.push(`/course/${course.id}`)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 非遗快讯（is_news=1 图文列表） -->
+    <div class="section" v-if="newsList.length">
+      <div class="section-head">
+        <h3 class="section-title">非遗快讯</h3>
+        <el-link type="danger" @click="router.push({ path: '/heritage', query: { isNews: 1 } })">更多 &gt;</el-link>
+      </div>
+      <div class="news-grid">
+        <div v-for="item in newsList" :key="item.id" class="news-item"
+             @click="router.push(`/heritage/${item.id}`)">
+          <img v-if="item.coverImage" :src="item.coverImage" class="news-cover" />
+          <div class="news-body">
+            <div class="news-tag"><el-tag size="small" type="danger" effect="dark">快讯</el-tag></div>
+            <div class="news-name">{{ item.name }}</div>
+            <div class="news-summary">{{ item.summary }}</div>
+            <div class="news-meta">{{ (item.publishTime || '').slice(0, 10) }}</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 猜你喜欢 -->
@@ -221,6 +247,20 @@ function goBanner(banner) {
           <HeritageCard :item="item" class="grid-card" @open="router.push(`/heritage/${item.id}`)" />
         </el-col>
       </el-row>
+    </div>
+
+    <!-- 最新公告 -->
+    <div class="section" v-if="notices.length">
+      <div class="section-head">
+        <h3 class="section-title">最新公告</h3>
+      </div>
+      <el-card shadow="never">
+        <div v-for="notice in notices" :key="notice.id" class="notice-item" @click="showNotice(notice)">
+          <el-icon color="#c0392b"><Bell /></el-icon>
+          <span class="notice-title">{{ notice.title }}</span>
+          <span class="notice-date">{{ (notice.publishTime || '').slice(0, 10) }}</span>
+        </div>
+      </el-card>
     </div>
     </template>
 
@@ -291,7 +331,38 @@ function goBanner(banner) {
   color: #fff;
 }
 
-/* ---------- 继续学习 ---------- */
+/* ---------- 今日非遗冷知识 ---------- */
+.tip-card {
+  background: linear-gradient(135deg, #fdf6ec 0%, #fde8e0 100%);
+  border: 1px solid var(--gq-border);
+  border-left: 4px solid var(--gq-gold);
+  border-radius: 12px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.tip-badge {
+  flex-shrink: 0;
+  background: var(--gq-gold);
+  color: #fff;
+  font-size: 13px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tip-content {
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--gq-text);
+}
+
+/* ---------- 接着看 ---------- */
 .continue-card {
   background: var(--gq-card);
   border: 1px solid var(--gq-border);
@@ -340,7 +411,7 @@ function goBanner(banner) {
   white-space: nowrap;
 }
 
-/* ---------- 分类导航（水波纹） ---------- */
+/* ---------- 分类导航 ---------- */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -364,7 +435,6 @@ function goBanner(banner) {
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(192, 57, 43, 0.12);
 }
-/* hover 水波纹：中心圆形涟漪扩散 */
 .category-item::after {
   content: '';
   position: absolute;
@@ -392,20 +462,105 @@ function goBanner(banner) {
   z-index: 1;
 }
 
-/* ---------- 布局 ---------- */
-.home-body {
+/* ---------- 热门科普视频横向滚动 ---------- */
+.hot-scroll-wrap {
+  position: relative;
+}
+.hot-scroll {
   display: flex;
-  gap: 20px;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 8px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-.main-section {
-  flex: 1;
-  margin-top: 24px;
+.hot-scroll::-webkit-scrollbar {
+  display: none;
 }
-.notice-section {
-  width: 320px;
-  flex-shrink: 0;
-  margin-top: 24px;
+.hot-card {
+  flex: 0 0 260px;
+  scroll-snap-align: start;
 }
+.scroll-arrows {
+  display: flex;
+  gap: 6px;
+}
+
+/* ---------- 非遗快讯 ---------- */
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.news-item {
+  background: var(--gq-card);
+  border: 1px solid var(--gq-border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.news-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.12);
+}
+.news-cover {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+.news-body {
+  padding: 12px 16px;
+}
+.news-tag {
+  margin-bottom: 6px;
+}
+.news-name {
+  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.news-summary {
+  margin-top: 6px;
+  color: var(--gq-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-meta {
+  margin-top: 8px;
+  color: #c0c4cc;
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .news-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .hot-card {
+    flex: 0 0 200px;
+  }
+}
+
+/* ---------- 公告 ---------- */
 .notice-item {
   display: flex;
   align-items: center;

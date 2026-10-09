@@ -66,3 +66,11 @@ export const noticeApi = {
   update: (data) => request.put('/api/admin/notice', data),
   remove: (id) => request.delete(`/api/admin/notice/${id}`)
 }
+
+// 冷知识管理
+export const tipApi = {
+  page: (params) => request.get('/api/admin/tip/page', { params }),
+  add: (data) => request.post('/api/admin/tip', data),
+  update: (data) => request.put('/api/admin/tip', data),
+  remove: (id) => request.delete(`/api/admin/tip/${id}`)
+}

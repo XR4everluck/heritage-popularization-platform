@@ -71,6 +71,10 @@ public class HeritageInfo {
     @TableField("endanger_level")
     private String endangerLevel;
 
+    /** 是否为科普快讯：0-否，1-是 */
+    @TableField("is_news")
+    private Integer isNews;
+
     /** 浏览量（冗余统计字段，业务层累加） */
     @TableField("view_count")
     private Integer viewCount;

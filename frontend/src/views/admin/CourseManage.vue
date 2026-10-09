@@ -31,7 +31,7 @@ const chapters = ref([])
 const chapterDialogVisible = ref(false)
 const chapterSaving = ref(false)
 const chapterFormRef = ref()
-const chapterForm = reactive({ id: null, title: '', videoUrl: '', content: '', sort: 1 })
+const chapterForm = reactive({ id: null, title: '', videoUrl: '', content: '', contentType: 'video', sort: 1 })
 const chapterRules = {
   title: [{ required: true, message: '请输入内容标题', trigger: 'blur' }]
 }
@@ -96,7 +96,7 @@ async function openChapters(row) {
 }
 
 function openChapterAdd() {
-  Object.assign(chapterForm, { id: null, title: '', videoUrl: '', content: '', sort: chapters.value.length + 1 })
+  Object.assign(chapterForm, { id: null, title: '', videoUrl: '', content: '', contentType: 'video', sort: chapters.value.length + 1 })
   chapterDialogVisible.value = true
 }
 
@@ -204,6 +204,14 @@ async function removeChapter(row) {
       <el-table :data="chapters" stripe>
         <el-table-column prop="sort" label="序号" width="60" align="center" />
         <el-table-column prop="title" label="内容标题" min-width="180" show-overflow-tooltip />
+        <el-table-column label="内容形态" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.contentType === 'video'" size="small" type="danger">视频</el-tag>
+            <el-tag v-else-if="row.contentType === 'article'" size="small" type="primary">图文</el-tag>
+            <el-tag v-else-if="row.contentType === 'audio'" size="small" type="warning">音频</el-tag>
+            <el-tag v-else size="small" type="danger">视频</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="视频" width="110" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.videoUrl" size="small" :type="/bilibili|b23\.tv/.test(row.videoUrl) ? 'warning' : 'success'">
@@ -224,6 +232,13 @@ async function removeChapter(row) {
       <el-dialog v-model="chapterDialogVisible" :title="chapterForm.id ? '编辑内容' : '新增内容'" width="520px" append-to-body>
         <el-form ref="chapterFormRef" :model="chapterForm" :rules="chapterRules" label-width="90px">
           <el-form-item label="内容标题" prop="title"><el-input v-model="chapterForm.title" maxlength="100" /></el-form-item>
+          <el-form-item label="内容形态">
+            <el-radio-group v-model="chapterForm.contentType">
+              <el-radio value="video">视频</el-radio>
+              <el-radio value="article">图文</el-radio>
+              <el-radio value="audio">音频</el-radio>
+            </el-radio-group>
+          </el-form-item>
           <el-form-item label="排序号"><el-input-number v-model="chapterForm.sort" :min="0" /></el-form-item>
           <el-form-item label="视频">
             <div style="width: 100%">

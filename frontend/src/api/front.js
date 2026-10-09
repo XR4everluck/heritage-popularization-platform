@@ -97,3 +97,8 @@ export function getLatestProgress() {
 export function getRecommend(params) {
   return request.get('/api/heritage/recommend', { params })
 }
+
+// 随机获取一条非遗冷知识（首页「今日非遗」板块）
+export function getRandomTip(heritageId) {
+  return request.get('/api/heritage/tip', { params: { heritageId } })
+}

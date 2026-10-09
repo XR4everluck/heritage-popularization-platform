@@ -1,6 +1,6 @@
 <script setup>
 /**
- * 非遗列表页：分类/级别筛选 + 关键词搜索 + 卡片列表 + 分页
+ * 非遗列表页：分类/级别/地区筛选 + 快讯切换 + 关键词搜索 + 卡片列表 + 分页
  */
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -14,15 +14,22 @@ const categories = ref([])
 const list = ref([])
 const total = ref(0)
 const loading = ref(false)
-// 首屏骨架屏：仅在首次加载时展示
+// 首屏骨架屏
 const firstLoading = ref(true)
 const query = ref({
   categoryId: route.query.categoryId ? Number(route.query.categoryId) : null,
   level: null,
+  region: null,
   keyword: route.query.keyword ? String(route.query.keyword) : '',
+  isNews: route.query.isNews ? Number(route.query.isNews) : null,
   page: 1,
   pageSize: 8
 })
+
+// 级别选项
+const LEVELS = ['国家级', '省级', '市级']
+// 常见地区选项
+const REGIONS = ['北京', '上海', '广东', '浙江', '江苏', '四川', '云南', '贵州', '福建', '陕西', '山东', '河南', '湖北', '湖南', '安徽', '江西', '广西', '西藏', '新疆', '内蒙古']
 
 onMounted(async () => {
   const res = await getCategoryList()
@@ -36,9 +43,15 @@ watch(() => route.query.categoryId, (val) => {
   loadData()
 })
 
-// 首页搜索框/热门标签跳转过来时自动执行搜索
 watch(() => route.query.keyword, (val) => {
   query.value.keyword = val ? String(val) : ''
+  query.value.page = 1
+  loadData()
+})
+
+// 首页快讯入口跳转
+watch(() => route.query.isNews, (val) => {
+  query.value.isNews = val ? Number(val) : null
   query.value.page = 1
   loadData()
 })
@@ -46,7 +59,14 @@ watch(() => route.query.keyword, (val) => {
 async function loadData() {
   loading.value = true
   try {
-    const res = await getHeritagePage(query.value)
+    // 只传非空参数
+    const params = { page: query.value.page, pageSize: query.value.pageSize }
+    if (query.value.categoryId) params.categoryId = query.value.categoryId
+    if (query.value.level) params.level = query.value.level
+    if (query.value.region) params.region = query.value.region
+    if (query.value.keyword) params.keyword = query.value.keyword
+    if (query.value.isNews) params.isNews = query.value.isNews
+    const res = await getHeritagePage(params)
     list.value = res.data.records
     total.value = Number(res.data.total)
   } finally {
@@ -55,11 +75,13 @@ async function loadData() {
   }
 }
 
-/** 清空筛选条件并重新查询（空结果引导） */
+/** 清空筛选条件并重新查询 */
 function resetFilters() {
   query.value.categoryId = null
   query.value.level = null
+  query.value.region = null
   query.value.keyword = ''
+  query.value.isNews = null
   query.value.page = 1
   loadData()
 }
@@ -94,22 +116,28 @@ function search() {
     <!-- 筛选区 -->
     <el-card shadow="never" class="filter-card">
       <div class="filter-row">
+        <!-- 快讯/全部切换 -->
+        <el-radio-group v-model="query.isNews" @change="search" size="default">
+          <el-radio-button :value="null">全部</el-radio-button>
+          <el-radio-button :value="1">科普快讯</el-radio-button>
+        </el-radio-group>
         <el-select v-model="query.categoryId" placeholder="全部分类" clearable style="width: 160px" @change="search">
           <el-option v-for="cate in categories" :key="cate.id" :label="cate.name" :value="cate.id" />
         </el-select>
-        <el-select v-model="query.level" placeholder="非遗级别" clearable style="width: 140px" @change="search">
-          <el-option label="国家级" value="国家级" />
-          <el-option label="省级" value="省级" />
-          <el-option label="市级" value="市级" />
+        <el-select v-model="query.level" placeholder="非遗级别" clearable style="width: 130px" @change="search">
+          <el-option v-for="lv in LEVELS" :key="lv" :label="lv" :value="lv" />
         </el-select>
-        <el-input v-model="query.keyword" placeholder="搜索非遗名称..." clearable style="width: 260px"
+        <el-select v-model="query.region" placeholder="所属地区" clearable filterable style="width: 140px" @change="search">
+          <el-option v-for="r in REGIONS" :key="r" :label="r" :value="r" />
+        </el-select>
+        <el-input v-model="query.keyword" placeholder="搜索非遗名称..." clearable style="width: 220px"
                   @keyup.enter="search" @clear="search" />
         <el-button type="danger" @click="search"><el-icon><Search /></el-icon>&nbsp;搜索</el-button>
       </div>
     </el-card>
 
-    <!-- 卡片列表（统一卡片风格，移动端 2 列） -->
-    <el-empty v-if="!list.length && !loading" description="没有找到相关非遗项目，换个关键词试试？">
+    <!-- 卡片列表 -->
+    <el-empty v-if="!list.length && !loading" :description="query.isNews ? '暂无科普快讯' : '没有找到相关非遗项目，换个关键词试试？'">
       <el-button type="danger" @click="resetFilters">清空筛选条件</el-button>
       <el-button @click="router.push('/')">回首页逛逛</el-button>
     </el-empty>
@@ -135,6 +163,8 @@ function search() {
 .filter-row {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 .card-list {
   min-height: 300px;
