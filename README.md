@@ -1,6 +1,6 @@
-# 非遗知识教学平台（SpringBoot + Vue3）
+# 非遗知识科普平台（SpringBoot + Vue3）
 
-毕设项目：非遗知识教学平台，前后端分离架构，包含**用户前台展示端** + **管理员后台管理端**。
+项目：非遗知识科普平台，前后端分离架构，包含**用户前台展示端** + **管理员后台管理端**。
 
 ## 技术栈
 
@@ -13,7 +13,7 @@
 ## 目录结构（按阶段逐步生成）
 
 ```
-heritage-teaching-platform
+heritage-popularization-platform
 ├── docs/       # 设计文档（需求分析、数据库设计，论文素材）
 ├── sql/        # 数据库脚本
 ├── backend/    # SpringBoot 后端（阶段2创建）
