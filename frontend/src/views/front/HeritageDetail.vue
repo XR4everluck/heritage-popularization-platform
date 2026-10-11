@@ -1,20 +1,22 @@
 <script setup>
 /**
- * 非遗详情页：图文详情 + 相关课程 + 评论区 + 答题测验
+ * 非遗详情页：图文详情 + 相关课程 + 相关推荐 + 评论区 + 答题测验 + 一键分享
  */
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getHeritageDetail, getHeritageRecommend, getLatestProgress, getRandomTip, getRandomQuestions, submitAnswer, getQuizRecords, getTotalScore } from '../../api/front'
+import { ElMessage } from 'element-plus'
+import { getHeritageDetail, getHeritageRecommend, getCourseListByHeritage, addHeritageView,
+         getCommentPage, postComment,
+         addCollection, removeCollection, getMyCollections,
+         getRandomQuestions, submitAnswer } from '../../api/front'
 import { useUserStore } from '../../store/user'
 import { defaultCover } from '../../utils/placeholder'
 import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
-import CateIcon from '../../components/CateIcon.vue'
 import QuizModal from '../../components/QuizModal.vue'
 import ShareModal from '../../components/ShareModal.vue'
-import { User, Share } from '@element-plus/icons-vue'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
@@ -32,85 +34,28 @@ const quizModalVisible = ref(false)
 const quizQuestions = ref([])
 const quizAnswers = ref({})
 const quizScore = ref(0)
-const quizRecords = ref([])
 const relatedRecommendations = ref([])
 const shareModalVisible = ref(false)
 
-onMounted(async () => {
-  loadDetail()
-  loadLatest()
-  loadQuizRecords()
-  loadRelatedRecommendations()
+/** 当前非遗 id（相关推荐/路由切换时随之变化） */
+const heritageId = computed(() => Number(route.params.id))
+
+/** 代表作品拆分为标签（「古琴、琴谱」→ [古琴, 琴谱]） */
+const workTags = computed(() =>
+  (info.value?.representativeWorks || '').split(/[,，、;；]/).map(t => t.trim()).filter(Boolean)
+)
+
+/** 濒危程度对应标签色：危 → 红、中间态 → 橙、良好 → 绿 */
+const endangerTagType = computed(() => {
+  const level = info.value?.endangerLevel || ''
+  if (/濒危|严重|危险/.test(level)) return 'danger'
+  if (/需关注|关注|一般/.test(level)) return 'warning'
+  if (/良好|安全/.test(level)) return 'success'
+  return 'info'
 })
-
-// 加载答题记录
-async function loadQuizRecords() {
-  if (!userStore.isLogin) return
-  try {
-    const res = await getQuizRecords()
-    quizRecords.value = res.data
-  } catch {
-    /* 忽略错误 */
-  }
-}
-
-async function loadDetail() {
-  loading.value = true
-  try {
-    const id = Number(useRoute().params.id)
-    info.value = await getHeritageDetail(id, true)
-    courses.value = await getRecommend({ heritageId: id, limit: 4 })
-    collected.value = info.value.collected
-  } finally {
-    loading.value = false
-  }
-}
-
-async function loadLatest() {
-  if (!userStore.isLogin) return
-  try {
-    const res = await getLatestProgress()
-    latest.value = res.data
-  } catch {
-    /* 未登录或无记录时忽略 */
-  }
-}
-
-// 切换收藏
-  async function toggleCollect() {
-    if (!userStore.isLogin) {
-      ElMessage.warning('请先登录')
-      return
-    }
-    collecting.value = true
-    try {
-      collected.value = !collected.value
-      // TODO: 调用收藏接口
-      ElMessage.success(collected.value ? '收藏成功' : '取消收藏成功')
-    } finally {
-      collecting.value = false
-    }
-  }
-
-// 跳转到传承人详情页
-function goInheritorDetail(inheritorId) {
-  router.push(`/inheritor/${inheritorId}`)
-}
-
-// 打开分享弹窗
-function openShare() {
-  shareModalVisible.value = true
-}
-
-// 关闭分享弹窗
-function closeShare() {
-  shareModalVisible.value = false
-}
 
 // 计算当前页面URL
-const currentUrl = computed(() => {
-  return window.location.pathname
-})
+const currentUrl = computed(() => window.location.pathname)
 
 // 分享信息
 const shareInfo = computed(() => {
@@ -121,6 +66,80 @@ const shareInfo = computed(() => {
     url: currentUrl.value
   }
 })
+
+onMounted(() => {
+  loadDetail()
+  loadComments()
+})
+
+// 相关推荐点击跳转其他非遗详情时，按新 id 整页重载
+watch(() => route.params.id, (val, old) => {
+  if (val && val !== old) {
+    loadDetail()
+    loadComments()
+  }
+})
+
+async function loadDetail() {
+  loading.value = true
+  try {
+    const id = heritageId.value
+    const res = await getHeritageDetail(id)
+    info.value = res.data
+    collected.value = false
+    syncCollected(id)
+    // 相关课程 / 相关推荐 / 浏览量自增：失败不阻塞详情展示
+    getCourseListByHeritage(id).then((r) => (courses.value = r.data || [])).catch(() => {})
+    getHeritageRecommend(id, 4).then((r) => (relatedRecommendations.value = r.data || [])).catch(() => {})
+    addHeritageView(id).catch(() => {})
+  } catch (e) {
+    // 项目不存在/未发布：拦截器已提示，这里展示空状态
+    info.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+/** 同步收藏状态（仅登录用户；收藏列表含 heritageId 与项目摘要） */
+async function syncCollected(id) {
+  if (!userStore.isLogin) return
+  try {
+    const res = await getMyCollections()
+    collected.value = (res.data || []).some((c) => c.heritageId === id)
+  } catch { /* 忽略，按钮仍可点击重试 */ }
+}
+
+// 切换收藏（真实调用收藏接口）
+async function toggleCollect() {
+  if (!userStore.isLogin) {
+    ElMessage.warning('请先登录')
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  collecting.value = true
+  try {
+    if (collected.value) {
+      await removeCollection(heritageId.value)
+      collected.value = false
+      ElMessage.success('已取消收藏')
+    } else {
+      await addCollection(heritageId.value)
+      collected.value = true
+      ElMessage.success('收藏成功')
+    }
+  } catch { /* 失败原因拦截器已提示 */ } finally {
+    collecting.value = false
+  }
+}
+
+// 跳转到传承人详情页
+function goInheritorDetail(inheritorId) {
+  router.push(`/inheritor/${inheritorId}`)
+}
+
+// 打开/关闭分享弹窗
+function openShare() { shareModalVisible.value = true }
+function closeShare() { shareModalVisible.value = false }
 
 // 打开测验弹窗
 function openQuiz() {
@@ -162,7 +181,6 @@ async function submitQuiz() {
     ))
     quizScore.value = results.reduce((sum, res) => sum + (Number(res.data?.score) || 0), 0)
     ElMessage.success(`答题完成！得分：${quizScore.value}分`)
-    loadQuizRecords()
   } catch (e) {
     ElMessage.error('提交答案失败，请稍后再试')
   }
@@ -175,43 +193,39 @@ function resetQuiz() {
   loadQuizQuestions()
 }
 
+// 加载评论（公开接口，分页）
+async function loadComments(page) {
+  if (page) commentPage.value = page
+  try {
+    const res = await getCommentPage({ heritageId: heritageId.value, page: commentPage.value, pageSize: 10 })
+    comments.value = res.data.records || []
+    commentTotal.value = Number(res.data.total) || 0
+  } catch { /* 加载失败保留原列表 */ }
+}
+
 // 提交评论
 async function submitComment() {
-  if (!commentContent.value.trim()) {
+  if (!userStore.isLogin) {
+    ElMessage.warning('请先登录后再评论')
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  const content = commentContent.value.trim()
+  if (!content) {
     ElMessage.warning('评论内容不能为空')
     return
   }
-
+  posting.value = true
   try {
-    await addComment({
-      heritageId: info.value.id,
-      content: commentContent.value
-    })
+    await postComment({ heritageId: heritageId.value, content })
     ElMessage.success('评论发表成功')
     commentContent.value = ''
+    commentPage.value = 1
     loadComments()
-  } catch (e) {
-    ElMessage.error('评论发表失败，请稍后再试')
+  } catch { /* 失败原因拦截器已提示 */ } finally {
+    posting.value = false
   }
 }
-
-// 加载评论
-async function loadComments() {
-  // TODO: 实现评论分页加载
-}
-
-// 加载相关推荐
-async function loadRelatedRecommendations() {
-  if (!info.value?.id) return
-  try {
-    const res = await getHeritageRecommend(info.value.id, 4)
-    relatedRecommendations.value = res.data || []
-  } catch (error) {
-    console.error('加载相关推荐失败:', error)
-  }
-}
-
-watch(() => useRoute().params.id, loadDetail)
 </script>
 
 <template>
@@ -222,7 +236,7 @@ watch(() => useRoute().params.id, loadDetail)
         <div class="meta">
           <span><el-icon><Location /></el-icon>{{ info?.region || '未知地区' }}</span>
           <span><el-icon><Award /></el-icon>{{ info?.level || '未知级别' }}</span>
-          <span><el-icon><Calendar /></el-icon>{{ info?.publishTime || '未发布' }}</span>
+          <span><el-icon><Calendar /></el-icon>{{ (info?.publishTime || '').slice(0, 10) || '未发布' }}</span>
         </div>
       </div>
 
@@ -246,9 +260,9 @@ watch(() => useRoute().params.id, loadDetail)
           <div class="info-block">
             <span class="info-label"><el-icon><User /></el-icon> 传承人</span>
             <span class="info-value">
-              <template v-if="info?.inheritorName">
+              <template v-if="info?.inheritor">
                 <a href="javascript:void(0)" @click="goInheritorDetail(info.inheritorId)" class="inheritor-link">
-                  {{ info.inheritorName }}
+                  {{ info.inheritor }}
                 </a>
               </template>
               <template v-else>待补充</template>

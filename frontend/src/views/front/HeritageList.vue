@@ -38,8 +38,11 @@ const REGIONS = [
 ]
 
 onMounted(async () => {
-  const res = await getCategoryList()
-  categories.value = res.data
+  // 分类下拉加载失败不阻塞列表（如后端未就绪），仅下拉为空
+  try {
+    const res = await getCategoryList()
+    categories.value = res.data
+  } catch { /* 拦截器已提示 */ }
   loadData()
 })
 

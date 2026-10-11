@@ -80,4 +80,23 @@ router.beforeEach((to) => {
   return true
 })
 
+// 路由懒加载失败兜底：dev server 重启或重新部署后，旧标签页里缓存的模块地址会失效，
+// 动态 import 报错导致路由视图空白。对同一目标地址整页刷新一次（sessionStorage 防循环）。
+const CHUNK_RELOAD_KEY = 'heritage_chunk_reload'
+router.onError((error, to) => {
+  const msg = String(error?.message || error)
+  if (!/Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk \d+ failed|error loading dynamically imported module/i.test(msg)) {
+    return
+  }
+  const target = to?.fullPath || '/'
+  if (sessionStorage.getItem(CHUNK_RELOAD_KEY) === target) {
+    // 刷新后仍失败：清除标记，交给用户手动刷新，避免无限循环
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY)
+    ElMessage.error('页面资源加载失败，请检查服务是否启动后刷新重试')
+    return
+  }
+  sessionStorage.setItem(CHUNK_RELOAD_KEY, target)
+  window.location.replace(router.resolve(target).href)
+})
+
 export default router

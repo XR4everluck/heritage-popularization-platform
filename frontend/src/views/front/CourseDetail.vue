@@ -24,6 +24,7 @@ const notFound = ref(false)
 const chapters = ref([])
 const currentChapter = ref(null)
 const myProgress = ref([])
+const shareModalVisible = ref(false)
 
 // 播放器引用与计时
 const playedSeconds = ref(0)
@@ -81,6 +82,7 @@ function closeShare() {
 const playerRef = ref(null)
 let art = null            // ArtPlayer 实例（非响应式）
 let lastSaveTs = 0        // 进度保存节流时间戳
+let lastTickTs = null     // 上一次 timeupdate 的播放位置（用于按真实时长累计）
 
 /** 章节播放进度的 localStorage 键 */
 const memKey = (chapterId) => `heritage_art_progress_${chapterId}`
@@ -132,15 +134,21 @@ function initPlayer() {
   }
   art.on('video:canplay', applyResume)
   art.on('ready', applyResume)
-  // 每 3 秒保存一次播放位置
+  // 每 3 秒保存一次播放位置；观看时长按 timeupdate 之间的真实播放差值累计
+  // （timeupdate 约每秒 4 次，不能按事件次数估分钟，否则统计膨胀约 4 倍）
+  lastTickTs = null
   art.on('video:timeupdate', () => {
     const now = Date.now()
     if (now - lastSaveTs > 3000) {
       lastSaveTs = now
       localStorage.setItem(memKey(chapter.id), String(Math.floor(art.currentTime)))
     }
-    // 累计观看时长用于学习进度上报
-    playedSeconds.value += 4
+    const cur = art.currentTime
+    // 只累计正向、连续的小步进（跳过 seek 跳变与回跳）
+    if (lastTickTs !== null && cur > lastTickTs && cur - lastTickTs < 2) {
+      playedSeconds.value += cur - lastTickTs
+    }
+    lastTickTs = cur
   })
   // 播放自然结束：标记章节完成
   art.on('video:ended', () => reportProgress(true))

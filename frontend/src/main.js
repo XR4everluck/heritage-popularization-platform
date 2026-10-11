@@ -18,4 +18,9 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
+// 全局错误兜底：渲染/事件错误不再静默清空组件树，保留堆栈便于排查
+app.config.errorHandler = (err, instance, info) => {
+  console.error(`[应用错误] ${info}:`, err)
+}
+
 app.mount('#app')
