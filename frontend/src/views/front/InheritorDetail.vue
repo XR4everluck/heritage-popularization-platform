@@ -1,10 +1,12 @@
 <template>
   <div class="inheritor-detail-page">
+    <AppBreadcrumb :items="[{ label: '首页', to: '/' }, { label: '传承人专题', to: '/inheritor' }, { label: inheritor.name || '传承人详情' }]" />
     <el-page-header :icon="ArrowLeft" :title="pageTitle" @back="goBack" />
-    
+
     <div class="inheritor-header">
       <div class="inheritor-avatar">
-        <img :src="inheritor.avatar || defaultCover(inheritor.name || '传承人', 300, 300)" :alt="inheritor.name">
+        <img :src="inheritor.avatar || defaultCover(inheritor.name || '传承人', 300, 300)"
+             :alt="`${inheritor.name}肖像，图片用于毕业设计展示`" width="300" height="300">
       </div>
       <div class="inheritor-info">
         <h1 class="inheritor-name">{{ inheritor.name }}</h1>
@@ -37,7 +39,9 @@
           </el-empty>
           <div v-for="work in inheritor.works" :key="work.id" class="work-item">
             <div class="work-image">
-              <img :src="work.image || defaultCover(work.title || '代表作品', 200, 150)" :alt="work.title">
+              <img :src="work.image || defaultCover(work.title || '代表作品', 200, 150)"
+                   :alt="`${inheritor.name}代表作品：${work.title}，图片用于毕业设计展示`"
+                   width="200" height="150">
             </div>
             <div class="work-info">
               <h4 class="work-title">{{ work.title }}</h4>
@@ -92,6 +96,9 @@
         </div>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- 版权备注：头像/作品图为视觉中国素材（docs/12 版权约束） -->
+    <CopyrightNote />
   </div>
 </template>
 
@@ -102,6 +109,8 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getInheritorDetail } from '../../api/front'
 import { defaultCover } from '../../utils/placeholder'
+import AppBreadcrumb from '../../components/AppBreadcrumb.vue'
+import CopyrightNote from '../../components/CopyrightNote.vue'
 
 const router = useRouter()
 
@@ -181,8 +190,9 @@ function goCourseDetail(id) {
   margin-bottom: 30px;
   padding: 20px;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--gq-border);
+  border-radius: 4px;
+  box-shadow: var(--shadow-card);
 }
 
 .inheritor-avatar {
@@ -251,23 +261,22 @@ function goCourseDetail(id) {
   display: flex;
   padding: 20px;
   margin-bottom: 20px;
-  border-radius: 12px;
+  border-radius: 4px;
   background: #fff;
   border: 1px solid var(--gq-border);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: none;
 }
 
+/* 悬停仅变边框色（docs/11 第 2 节禁令：不做位移/阴影增强） */
 .work-item:hover, .heritage-item:hover, .video-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
   border-color: var(--gq-primary);
 }
 
 .work-image, .heritage-image, .video-image {
   width: 150px;
   height: 100px;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
   margin-right: 20px;
   flex-shrink: 0;

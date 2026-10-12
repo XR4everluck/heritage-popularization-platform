@@ -3,10 +3,11 @@
  * 个人中心：学习数据仪表板 + 我的收藏 / 我的评论 / 我的学习 / 个人资料（Tab 切换）
  */
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyCollections, removeCollection, getMyComments, deleteMyComment,
-         getMyProgress, getCourseChapters, getTotalScore } from '../../api/front'
+         getMyProgress, getCourseChapters, getTotalScore,
+         submitContent, getMySubmissions, getCategoryList, getHeritagePage } from '../../api/front'
 import { getProfile, updateProfile } from '../../api/user'
 import { useUserStore } from '../../store/user'
 import FileUpload from '../../components/FileUpload.vue'
@@ -14,9 +15,11 @@ import { defaultCover } from '../../utils/placeholder'
 import { Medal } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
-const activeTab = ref('collection')
+// 支持 /profile?tab=publish 直达指定 Tab（全民科普页"我要发布"入口）
+const activeTab = ref(['collection', 'comment', 'study', 'publish', 'profile'].includes(route.query.tab) ? route.query.tab : 'collection')
   // 我的收藏
   const collections = ref([])
   // 我的评论
@@ -32,14 +35,59 @@ const activeTab = ref('collection')
   const saving = ref(false)
   // 我的积分
   const totalScore = ref(0)
+  // 内容发布（docs/17：提交后需管理员审核）
+  const heritageOptions = ref([])
+  const publishing = ref(false)
+  const mySubs = ref([])
+  const publishForm = ref({ type: 'news', title: '', heritageId: null, content: '', videoUrl: '' })
 
-onMounted(() => {
-  loadCollections()
-  loadComments()
-  loadProgress()
-  loadProfile()
-  loadTotalScore()
-})
+  onMounted(() => {
+    loadCollections()
+    loadComments()
+    loadProgress()
+    loadProfile()
+    loadTotalScore()
+    loadSubmissions()
+    loadHeritageOptions()
+  })
+
+  async function loadHeritageOptions() {
+    try {
+      const res = await getHeritagePage({ page: 1, pageSize: 100 })
+      heritageOptions.value = res.data.records || []
+    } catch { /* 下拉为空不阻塞 */ }
+  }
+
+  async function loadSubmissions() {
+    try {
+      const res = await getMySubmissions()
+      mySubs.value = res.data || []
+    } catch { /* 失败保留空列表 */ }
+  }
+
+  /** 发布内容：快讯必填正文；视频必填 B 站链接 */
+  async function publish() {
+    const form = publishForm.value
+    if (!form.title.trim()) { ElMessage.warning('请填写标题'); return }
+    if (form.type === 'news' && !form.content.trim()) { ElMessage.warning('科普快讯请填写正文'); return }
+    if (form.type === 'course' && !form.videoUrl.trim()) { ElMessage.warning('科普视频请填写B站视频链接'); return }
+    publishing.value = true
+    try {
+      await submitContent({ ...form, title: form.title.trim() })
+      ElMessage.success('已提交，等待管理员审核通过后展示')
+      publishForm.value = { type: 'news', title: '', heritageId: null, content: '', videoUrl: '' }
+      loadSubmissions()
+    } catch { /* 失败原因拦截器已提示 */ } finally {
+      publishing.value = false
+    }
+  }
+
+  /** 审核状态文案与标签类型 */
+  const STATUS_META = {
+    0: { text: '待审核', type: 'warning' },
+    1: { text: '已通过', type: 'success' },
+    2: { text: '未通过', type: 'danger' }
+  }
 
 async function loadCollections() {
   const res = await getMyCollections()
@@ -241,6 +289,51 @@ async function saveProfile() {
         </div>
       </el-tab-pane>
 
+      <!-- 内容发布（docs/17：提交后需管理员审核通过才上线） -->
+      <el-tab-pane label="内容发布" name="publish">
+        <el-alert type="info" :closable="false" show-icon style="margin-bottom: 16px"
+                  title="发布的内容须经管理员审核通过后才会展示在首页" />
+        <el-form :model="publishForm" label-width="90px" style="max-width: 640px">
+          <el-form-item label="内容类型">
+            <el-radio-group v-model="publishForm.type">
+              <el-radio-button value="news">科普快讯</el-radio-button>
+              <el-radio-button value="course">科普视频</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="标题">
+            <el-input v-model="publishForm.title" maxlength="60" show-word-limit placeholder="请输入标题" />
+          </el-form-item>
+          <el-form-item label="关联项目">
+            <el-select v-model="publishForm.heritageId" placeholder="关联非遗项目（可选）" clearable filterable style="width: 100%">
+              <el-option v-for="item in heritageOptions" :key="item.id" :label="item.name" :value="item.id" />
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="publishForm.type === 'course'" label="B站链接">
+            <el-input v-model="publishForm.videoUrl" placeholder="https://www.bilibili.com/video/BVxxxx" />
+          </el-form-item>
+          <el-form-item :label="publishForm.type === 'course' ? '视频简介' : '正文'">
+            <el-input v-model="publishForm.content" type="textarea" :rows="4" maxlength="2000" show-word-limit />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="danger" :loading="publishing" @click="publish">提交发布</el-button>
+          </el-form-item>
+        </el-form>
+
+        <el-divider content-position="left">我的发布</el-divider>
+        <el-empty v-if="!mySubs.length" description="还没有发布过内容" :image-size="60" />
+        <div v-for="sub in mySubs" :key="sub.id" class="sub-row">
+          <div class="sub-main">
+            <div class="sub-title">
+              {{ sub.title }}
+              <el-tag size="small" type="info" effect="plain">{{ sub.type === 'course' ? '科普视频' : '科普快讯' }}</el-tag>
+            </div>
+            <div class="sub-meta">提交于 {{ sub.submitTime }}</div>
+            <div v-if="sub.status === 2 && sub.reviewNote" class="sub-reject">驳回原因：{{ sub.reviewNote }}</div>
+          </div>
+          <el-tag :type="STATUS_META[sub.status]?.type">{{ STATUS_META[sub.status]?.text }}</el-tag>
+        </div>
+      </el-tab-pane>
+
       <!-- 个人资料 -->
       <el-tab-pane label="个人资料" name="profile">
         <el-form :model="profileForm" label-width="80px" style="max-width: 520px; margin-top: 10px">
@@ -392,6 +485,35 @@ async function saveProfile() {
 }
 .study-duration {
   color: #909399;
+  font-size: 13px;
+}
+/* 内容发布：我的发布列表 */
+.sub-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gq-divider);
+}
+.sub-main {
+  flex: 1;
+  min-width: 0;
+}
+.sub-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sub-meta {
+  margin-top: 4px;
+  color: var(--gq-text-muted);
+  font-size: 12px;
+  font-family: var(--font-en);
+}
+.sub-reject {
+  margin-top: 4px;
+  color: var(--gq-primary);
   font-size: 13px;
 }
 .pager {

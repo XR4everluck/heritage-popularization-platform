@@ -1,7 +1,8 @@
 <script setup>
 /**
- * 统一非遗卡片（全站复用）：封面固定 160px、圆角 12px、hover 上浮+阴影过渡；
- * 底部统一展示名称 + 级别/分类标签 + 地区/浏览量 meta
+ * 统一非遗卡片（全站复用，docs/11 第 5.2 节）
+ * 纯白卡片 + 细边框 + 唯一档阴影；封面固定 160px（width/height 占位防 CLS）；
+ * 悬停仅允许边框/文字变色，不做位移与阴影增强。
  */
 import { defaultCover } from '../utils/placeholder'
 
@@ -14,13 +15,15 @@ const emit = defineEmits(['open'])
 
 <template>
   <el-card shadow="hover" class="gq-card" :body-style="{ padding: 0 }" @click="emit('open')">
-    <img :src="item.coverImage || defaultCover(item.name)" class="gq-card-cover"
+    <!-- width/height 属性占位防布局偏移（CLS）；占位图尺寸 600x360 -->
+    <img :src="item.coverImage || defaultCover(item.name)" :alt="item.name || '非遗项目封面'"
+         width="600" height="360" class="gq-card-cover"
          @error="$event.target.src = defaultCover(item.name)" />
     <div class="gq-card-body">
       <div class="gq-card-name" :title="item.name">{{ item.name }}</div>
       <div class="gq-card-tags">
-        <el-tag size="small" :type="item.level === '国家级' ? 'danger' : 'warning'">{{ item.level }}</el-tag>
-        <el-tag v-if="item.categoryName" size="small" type="info">{{ item.categoryName }}</el-tag>
+        <el-tag size="small" :type="item.level === '国家级' ? 'danger' : 'info'">{{ item.level }}</el-tag>
+        <el-tag v-if="item.categoryName" size="small" type="info" effect="plain">{{ item.categoryName }}</el-tag>
       </div>
       <div class="gq-card-meta">
         <span class="gq-card-region" :title="item.region">{{ item.region || '-' }}</span>
@@ -32,14 +35,17 @@ const emit = defineEmits(['open'])
 
 <style scoped>
 .gq-card {
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: none;
 }
+/* 悬停仅变边框色（docs/11 第 2 节：不做位移/阴影增强） */
 .gq-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(44, 62, 80, 0.14);
+  border-color: var(--gq-primary);
+}
+.gq-card:hover .gq-card-name {
+  color: var(--gq-primary);
 }
 .gq-card-cover {
   width: 100%;
@@ -52,7 +58,8 @@ const emit = defineEmits(['open'])
 }
 .gq-card-name {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 16px;
+  color: var(--gq-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -63,7 +70,7 @@ const emit = defineEmits(['open'])
   gap: 6px;
 }
 .gq-card-meta {
-  color: #909399;
+  color: var(--gq-text-muted);
   font-size: 12px;
   display: flex;
   justify-content: space-between;

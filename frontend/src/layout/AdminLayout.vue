@@ -38,6 +38,7 @@ async function handleLogout() {
         <el-menu-item index="/admin/quiz"><el-icon><DocumentCopy /></el-icon>题库管理</el-menu-item>
         <el-menu-item index="/admin/heritage-tip"><el-icon><Lightbulb /></el-icon>冷知识管理</el-menu-item>
         <el-menu-item index="/admin/heritage-news"><el-icon><Newspaper /></el-icon>科普快讯管理</el-menu-item>
+        <el-menu-item index="/admin/submission"><el-icon><DocumentChecked /></el-icon>内容审核</el-menu-item>
         <el-menu-item index="/admin/user"><el-icon><User /></el-icon>用户管理</el-menu-item>
         <el-menu-item index="/admin/comment"><el-icon><ChatDotRound /></el-icon>评论管理</el-menu-item>
         <el-menu-item index="/admin/banner"><el-icon><Picture /></el-icon>轮播图管理</el-menu-item>

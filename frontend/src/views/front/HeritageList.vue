@@ -1,11 +1,15 @@
 <script setup>
 /**
- * 非遗列表页：分类/级别/地区筛选 + 快讯切换 + 关键词搜索 + 卡片列表 + 分页
+ * 非遗列表页（docs/11 第 5.2、5.5 节）：分类/级别/地区筛选 + 关键词搜索（兼搜索结果页）
+ * + 卡片列表 + 统一分页；面包屑语义化导航；底部版权备注。
  */
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCategoryList, getHeritagePage } from '../../api/front'
 import HeritageCard from '../../components/HeritageCard.vue'
+import AppBreadcrumb from '../../components/AppBreadcrumb.vue'
+import AppPagination from '../../components/AppPagination.vue'
+import CopyrightNote from '../../components/CopyrightNote.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,10 +110,35 @@ function search() {
   query.value.page = 1
   loadData()
 }
+
+/** 面包屑：搜索进入时为 非遗博览 / 搜索结果，常规进入为 首页 / 非遗博览 */
+const breadcrumbItems = computed(() =>
+  query.value.keyword
+    ? [
+        { label: '首页', to: '/' },
+        { label: '非遗博览', to: '/heritage' },
+        { label: '搜索结果' }
+      ]
+    : [{ label: '首页', to: '/' }, { label: '非遗博览' }]
+)
 </script>
 
 <template>
   <div class="list-page">
+    <!-- 面包屑（搜索进入时显示"搜索结果"层级） -->
+    <AppBreadcrumb :items="breadcrumbItems" />
+
+    <!-- 页头横幅（docs/14：居中标题 + 对称纹样装饰；搜索态下隐藏） -->
+    <div v-if="!query.keyword" class="gq-page-header">
+      <h1>非遗博览</h1>
+      <p>国家级 · 省级 · 市级非物质文化遗产代表性项目</p>
+    </div>
+
+    <!-- 搜索结果统计行（docs/11 第 5.5 节："找到 N 条与关键词相关的结果"） -->
+    <p v-if="query.keyword" class="search-summary" role="status">
+      找到 <b>{{ total }}</b> 条与“{{ query.keyword }}”相关的结果
+    </p>
+
     <!-- 骨架屏（首次加载） -->
     <el-row :gutter="16" v-if="firstLoading">
       <el-col v-for="i in 8" :key="i" :xs="12" :sm="12" :md="8" :lg="6">
@@ -163,16 +192,27 @@ function search() {
       </el-col>
     </el-row>
 
-    <!-- 分页 -->
-    <div class="pager">
-      <el-pagination v-model:current-page="query.page" :page-size="query.pageSize" :total="total"
-                     layout="prev, pager, next, total" background @current-change="loadData" />
-    </div>
+    <!-- 分页（统一公共组件） -->
+    <AppPagination v-model:page="query.page" :page-size="query.pageSize" :total="total" @change="loadData" />
+
+    <!-- 版权备注：卡片封面为视觉中国素材（docs/12 版权约束） -->
+    <CopyrightNote />
     </template>
   </div>
 </template>
 
 <style scoped>
+/* 面包屑项：非遗博览 / 搜索结果 */
+/* 搜索结果统计行：数字命中 Times New Roman（全局字体栈） */
+.search-summary {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--gq-text-secondary);
+}
+.search-summary b {
+  color: var(--gq-primary);
+  font-family: var(--font-en);
+}
 .filter-card {
   margin-bottom: 16px;
 }
@@ -190,11 +230,6 @@ function search() {
 }
 .sk-card {
   margin-bottom: 16px;
-  border-radius: 12px;
-}
-.pager {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0 20px;
+  border-radius: 4px;
 }
 </style>

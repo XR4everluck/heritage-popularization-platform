@@ -23,7 +23,8 @@ function formatDuration(minutes) {
 <template>
   <el-card shadow="hover" class="gq-card" :body-style="{ padding: 0 }" @click="emit('open')">
     <div class="gq-card-cover-wrap">
-      <img :src="item.cover || defaultCover(item.name)" class="gq-card-cover"
+      <img :src="item.cover || defaultCover(item.name)" :alt="item.name || '课程封面'" width="600" height="360"
+           class="gq-card-cover"
            @error="$event.target.src = defaultCover(item.name)" />
       <span class="gq-card-duration"><el-icon><VideoCamera /></el-icon>{{ formatDuration(item.duration) }}</span>
     </div>
@@ -44,14 +45,17 @@ function formatDuration(minutes) {
 
 <style scoped>
 .gq-card {
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: none;
 }
+/* 悬停仅变边框色（docs/11 第 2 节：不做位移/阴影增强） */
 .gq-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(44, 62, 80, 0.14);
+  border-color: var(--gq-primary);
+}
+.gq-card:hover .gq-card-name {
+  color: var(--gq-primary);
 }
 .gq-card-cover-wrap {
   position: relative;

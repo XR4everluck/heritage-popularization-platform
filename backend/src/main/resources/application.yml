@@ -13,9 +13,9 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 数据库 heritage_teaching 由 sql/heritage_teaching_platform.sql 创建
     url: jdbc:mysql://localhost:3306/heritage_teaching?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    # TODO：改成你本机 MySQL 的账号密码
+    # 本机 MySQL 账号密码
     username: root
-    password: "请修改为你的数据库密码"
+    password: "1234"
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -56,9 +56,9 @@ mybatis-plus:
 # ---------- 平台自定义配置 ----------
 heritage:
   jwt:
-    # JWT 签名密钥：从环境变量 HERITAGE_JWT_SECRET 读取（至少32字节），
-    # 不要把真实密钥提交到代码仓库；未配置时后端自动使用随机密钥（重启后登录态失效，仅限开发调试）
-    secret: ${HERITAGE_JWT_SECRET:}
+    # JWT 签名密钥：优先读环境变量 HERITAGE_JWT_SECRET；本地开发默认固定密钥，
+    # 保证后端重启后登录态不失效（生产环境务必改用环境变量注入，勿提交真实密钥）
+    secret: ${HERITAGE_JWT_SECRET:heritage-local-dev-secret-key-please-change-in-prod}
     # token 有效期（小时）
     expire-hours: 24
   upload:

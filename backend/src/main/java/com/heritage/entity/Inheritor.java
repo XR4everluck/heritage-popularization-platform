@@ -51,6 +51,11 @@ public class Inheritor {
     private String achievements;
 
     /**
+     * 代表作品（JSON 数组字符串：[{"title","description","tags"}]）
+     */
+    private String works;
+
+    /**
      * 标签（多个标签用逗号分隔）
      */
     private String tags;

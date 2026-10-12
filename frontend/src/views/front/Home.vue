@@ -12,6 +12,7 @@ import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
 import CateIcon from '../../components/CateIcon.vue'
 import BannerCarousel from '../../components/BannerCarousel.vue'
+import CopyrightNote from '../../components/CopyrightNote.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -260,7 +261,7 @@ function scrollHot(dir) {
       </div>
       <div class="news-grid">
         <div v-for="item in newsList" :key="item.id" class="news-item" @click="showNews(item)">
-          <img v-if="item.coverImage" :src="item.coverImage" class="news-cover" />
+          <img v-if="item.coverImage" v-lazy="item.coverImage" class="news-cover" :alt="item.title || '科普快讯配图'" />
           <div class="news-body">
             <div class="news-tag">
               <el-tag v-if="item.isTop === 1" size="small" type="danger" effect="dark">置顶</el-tag>
@@ -311,12 +312,15 @@ function scrollHot(dir) {
       </div>
       <el-card shadow="never">
         <div v-for="notice in notices" :key="notice.id" class="notice-item" @click="showNotice(notice)">
-          <el-icon color="#c0392b"><Bell /></el-icon>
+          <el-icon color="#9e2021"><Bell /></el-icon>
           <span class="notice-title">{{ notice.title }}</span>
           <span class="notice-date">{{ (notice.publishTime || '').slice(0, 10) }}</span>
         </div>
       </el-card>
     </div>
+
+    <!-- 版权备注：页面含轮播图/卡片封面等视觉中国素材（docs/12 版权约束） -->
+    <CopyrightNote />
     </template>
 
     <!-- 公告详情弹窗 -->
@@ -360,9 +364,9 @@ function scrollHot(dir) {
 .search-box {
   background: var(--gq-card);
   border: 1px solid var(--gq-border);
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 16px 20px;
-  box-shadow: 0 2px 10px rgba(44, 62, 80, 0.05);
+  box-shadow: var(--shadow-card);
 }
 .hot-keywords {
   margin-top: 10px;
@@ -372,7 +376,7 @@ function scrollHot(dir) {
   flex-wrap: wrap;
 }
 .hot-label {
-  color: #8a8578;
+  color: var(--gq-text-muted);
   font-size: 13px;
 }
 .hot-tag {
@@ -386,12 +390,12 @@ function scrollHot(dir) {
   color: #fff;
 }
 
-/* ---------- 今日非遗冷知识 ---------- */
+/* ---------- 今日非遗冷知识：纯白卡片 + 主色左竖线（docs/11：禁渐变卡片） ---------- */
 .tip-card {
-  background: linear-gradient(135deg, #fdf6ec 0%, #fde8e0 100%);
+  background: var(--gq-card);
   border: 1px solid var(--gq-border);
-  border-left: 4px solid var(--gq-gold);
-  border-radius: 12px;
+  border-left: 4px solid var(--gq-primary);
+  border-radius: 4px;
   padding: 18px 24px;
   display: flex;
   align-items: center;
@@ -399,13 +403,13 @@ function scrollHot(dir) {
 }
 .tip-badge {
   flex-shrink: 0;
-  background: var(--gq-gold);
+  background: var(--gq-primary);
   color: #fff;
   font-size: 13px;
   font-family: var(--font-heading);
   font-weight: 700;
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -417,22 +421,21 @@ function scrollHot(dir) {
   color: var(--gq-text);
 }
 
-/* ---------- 接着看 ---------- */
+/* ---------- 接着看：悬停仅变色，不做位移/阴影 ---------- */
 .continue-card {
   background: var(--gq-card);
   border: 1px solid var(--gq-border);
   border-left: 4px solid var(--gq-primary);
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 14px 20px;
   display: flex;
   align-items: center;
   gap: 14px;
   cursor: pointer;
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  transition: none;
 }
 .continue-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.12);
+  border-color: var(--gq-primary);
 }
 .continue-badge {
   background: var(--gq-primary);
@@ -477,35 +480,19 @@ function scrollHot(dir) {
   overflow: hidden;
   background: var(--gq-card);
   border: 1px solid var(--gq-border);
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 18px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: none;
 }
+/* 悬停仅变边框色（docs/11 第 2 节禁令） */
 .category-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(192, 57, 43, 0.12);
-}
-.category-item::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(192, 57, 43, 0.10) 0%, rgba(192, 57, 43, 0.04) 45%, transparent 70%);
-  transform: translate(-50%, -50%);
-  transition: width 0.5s ease, height 0.5s ease;
-  pointer-events: none;
-}
-.category-item:hover::after {
-  width: 260%;
-  height: 260%;
+  border-color: var(--gq-primary);
+  color: var(--gq-primary);
 }
 .cate-icon {
   color: var(--gq-primary);
@@ -551,14 +538,13 @@ function scrollHot(dir) {
 .news-item {
   background: var(--gq-card);
   border: 1px solid var(--gq-border);
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: none;
 }
 .news-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.12);
+  border-color: var(--gq-primary);
 }
 .news-cover {
   width: 100%;
@@ -592,8 +578,9 @@ function scrollHot(dir) {
 }
 .news-meta {
   margin-top: 8px;
-  color: #c0c4cc;
+  color: var(--gq-text-muted);
   font-size: 12px;
+  font-family: var(--font-en);
 }
 
 /* ---------- 快讯详情弹窗 ---------- */
@@ -609,7 +596,7 @@ function scrollHot(dir) {
   width: 100%;
   max-height: 260px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 2px;
   margin-bottom: 14px;
 }
 .news-detail-content {
@@ -646,7 +633,7 @@ function scrollHot(dir) {
   align-items: center;
   gap: 8px;
   padding: 9px 0;
-  border-bottom: 1px dashed var(--gq-border);
+  border-bottom: 1px solid var(--gq-divider);
   cursor: pointer;
   font-size: 13px;
 }
@@ -660,7 +647,8 @@ function scrollHot(dir) {
   white-space: nowrap;
 }
 .notice-date {
-  color: #c0c4cc;
+  color: var(--gq-text-muted);
   font-size: 12px;
+  font-family: var(--font-en);
 }
 </style>

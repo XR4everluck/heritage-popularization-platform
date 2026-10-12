@@ -13,6 +13,7 @@ const routes = [
       { path: 'heritage/:id', name: 'heritageDetail', component: () => import('../views/front/HeritageDetail.vue'), meta: { title: '非遗详情' } },
       { path: 'course/:id', name: 'courseDetail', component: () => import('../views/front/CourseDetail.vue'), meta: { title: '科普观看' } },
       { path: 'inheritor', name: 'inheritorList', component: () => import('../views/front/InheritorList.vue'), meta: { title: '传承人专题' } },
+      { path: 'community', name: 'community', component: () => import('../views/front/Community.vue'), meta: { title: '全民科普' } },
       { path: 'inheritor/:id', name: 'inheritorDetail', component: () => import('../views/front/InheritorDetail.vue'), meta: { title: '传承人详情' } },
       { path: 'map', name: 'heritageMap', component: () => import('../views/front/HeritageMap.vue'), meta: { title: '非遗地图' } },
       { path: 'profile', name: 'profile', component: () => import('../views/front/Profile.vue'), meta: { title: '个人中心', requiresAuth: true } },
@@ -42,7 +43,8 @@ const routes = [
       { path: 'inheritor', name: 'inheritorManage', component: () => import('../views/admin/InheritorManage.vue'), meta: { title: '传承人管理' } },
       { path: 'quiz', name: 'quizManage', component: () => import('../views/admin/QuizManage.vue'), meta: { title: '题库管理' } },
       { path: 'heritage-tip', name: 'heritageTipManage', component: () => import('../views/admin/HeritageTipManage.vue'), meta: { title: '冷知识管理' } },
-      { path: 'heritage-news', name: 'heritageNewsManage', component: () => import('../views/admin/HeritageNewsManage.vue'), meta: { title: '科普快讯管理' } }
+      { path: 'heritage-news', name: 'heritageNewsManage', component: () => import('../views/admin/HeritageNewsManage.vue'), meta: { title: '科普快讯管理' } },
+      { path: 'submission', name: 'submissionManage', component: () => import('../views/admin/SubmissionManage.vue'), meta: { title: '内容审核' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

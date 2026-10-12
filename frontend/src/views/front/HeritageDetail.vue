@@ -1,6 +1,7 @@
 <script setup>
 /**
- * 非遗详情页：图文详情 + 相关课程 + 相关推荐 + 评论区 + 答题测验 + 一键分享
+ * 非遗详情页（docs/11 第 5.4 节）：面包屑 + 图文详情（正文） + 图集（PhotoGallery）
+ * + 相关课程 + 相关推荐 + 评论区 + 答题测验 + 一键分享；底部版权备注。
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -15,6 +16,11 @@ import HeritageCard from '../../components/HeritageCard.vue'
 import CourseCard from '../../components/CourseCard.vue'
 import QuizModal from '../../components/QuizModal.vue'
 import ShareModal from '../../components/ShareModal.vue'
+import PhotoGallery from '../../components/PhotoGallery.vue'
+import AppBreadcrumb from '../../components/AppBreadcrumb.vue'
+import CopyrightNote from '../../components/CopyrightNote.vue'
+// 本地图集映射：后端尚无图集表时的过渡方案（图片为本地免费图库素材，见 docs/15/19）
+import { getGalleryByName } from '../../mock/heritage-images'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,6 +94,10 @@ async function loadDetail() {
     info.value = res.data
     collected.value = false
     syncCollected(id)
+    // 图集：后端有图集数据用后端的；为空时按项目名称回退到本地图集映射（本地素材，docs/19）
+    if (info.value && !info.value.images?.length) {
+      info.value.images = getGalleryByName(info.value.name)
+    }
     // 相关课程 / 相关推荐 / 浏览量自增：失败不阻塞详情展示
     getCourseListByHeritage(id).then((r) => (courses.value = r.data || [])).catch(() => {})
     getHeritageRecommend(id, 4).then((r) => (relatedRecommendations.value = r.data || [])).catch(() => {})
@@ -230,6 +240,9 @@ async function submitComment() {
 
 <template>
   <div class="heritage-detail">
+    <!-- 面包屑 -->
+    <AppBreadcrumb :items="[{ label: '首页', to: '/' }, { label: '非遗博览', to: '/heritage' }, { label: info?.name || '非遗详情' }]" />
+
     <el-card shadow="never" v-loading="loading">
       <div class="detail-header">
         <h1>{{ info?.name || '非遗详情' }}</h1>
@@ -282,6 +295,18 @@ async function submitComment() {
             <el-icon><Share /></el-icon>&nbsp;分享
           </el-button>
         </div>
+      </el-card>
+
+      <!-- 图文详情正文（docs/11 第 5.4 节：富文本由 .rich-content 统一接管） -->
+      <el-card shadow="never" class="side-card" v-if="info?.content">
+        <template #header><b>项目介绍</b></template>
+        <div class="rich-content" v-html="info.content"></div>
+      </el-card>
+
+      <!-- 图集（PhotoGallery 公共组件：懒加载 + 无障碍 + 底部版权备注） -->
+      <el-card shadow="never" class="side-card" v-if="info?.images?.length">
+        <template #header><b>项目图集</b></template>
+        <PhotoGallery :images="info.images" />
       </el-card>
 
       <!-- 相关课程（紧凑列表） -->
@@ -350,6 +375,9 @@ async function submitComment() {
     
     <!-- 分享弹窗 -->
     <ShareModal v-model="shareModalVisible" :share-info="shareInfo" @close="closeShare" />
+
+    <!-- 版权备注：详情图集封面为视觉中国素材（docs/12 版权约束） -->
+    <CopyrightNote />
   </div>
 </template>
 
@@ -366,8 +394,9 @@ async function submitComment() {
 .meta {
   display: flex;
   gap: 20px;
-  color: #8a8578;
+  color: var(--gq-text-muted);
   font-size: 14px;
+  font-family: var(--font-en);
 }
 .meta span {
   display: flex;
@@ -375,6 +404,7 @@ async function submitComment() {
   gap: 6px;
 }
 .info-card {
+  position: relative; /* 收藏/分享按钮 absolute 定位的锚点（缺失会把按钮顶到页面右上被导航遮挡） */
   margin-bottom: 20px;
 }
 .info-grid {
@@ -388,7 +418,7 @@ async function submitComment() {
   gap: 10px;
 }
 .info-label {
-  color: #8a8578;
+  color: var(--gq-text-muted);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -427,7 +457,7 @@ async function submitComment() {
   gap: 12px;
 }
 .quiz-tip {
-  color: #8a8578;
+  color: var(--gq-text-muted);
   font-size: 13px;
   display: flex;
   align-items: center;
@@ -437,13 +467,13 @@ async function submitComment() {
   margin-bottom: 16px;
   padding: 16px;
   background: var(--gq-card);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 .comment-item {
   display: flex;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px dashed var(--gq-border);
+  border-bottom: 1px solid var(--gq-divider);
 }
 .comment-body {
   flex: 1;
@@ -458,8 +488,9 @@ async function submitComment() {
   color: var(--gq-primary);
 }
 .comment-time {
-  color: #8a8578;
+  color: var(--gq-text-muted);
   font-size: 12px;
+  font-family: var(--font-en);
 }
 .comment-content {
   color: var(--gq-text);

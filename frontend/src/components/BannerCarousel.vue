@@ -1,7 +1,8 @@
 <script setup>
 /**
- * 国风淡入淡出轮播图：全宽图 + 底部渐变遮罩 + 大字主标题/副标题叠加层；
- * title 中若含 ：／，／—— 分隔符则自动拆分为主/副标题，否则副标题用平台口号兜底
+ * 首页轮播图（docs/11 第 5.1 节）
+ * 自动切换（水平淡入淡出，功能性动效，≥4.5s）；图上左下角白底标题条（主色竖线 + #333 标题）；
+ * 支持左右箭头、指示器、悬停暂停；图片 alt 必填。
  */
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { coverFallback } from '../utils/placeholder'
@@ -28,7 +29,7 @@ function startTimer() {
   stopTimer()
   timer = setInterval(() => {
     if (props.banners.length) active.value = (active.value + 1) % props.banners.length
-  }, 4500)
+  }, 5000)
 }
 function stopTimer() {
   if (timer) clearInterval(timer)
@@ -47,25 +48,34 @@ onBeforeUnmount(stopTimer)
 </script>
 
 <template>
-  <div class="fade-carousel" v-if="banners.length" @mouseenter="stopTimer" @mouseleave="startTimer">
+  <div
+    class="fade-carousel"
+    v-if="banners.length"
+    role="region"
+    aria-roledescription="轮播"
+    aria-label="推荐 banner"
+    @mouseenter="stopTimer"
+    @mouseleave="startTimer"
+  >
     <transition-group name="banner-fade">
       <div v-for="(banner, index) in banners" v-show="index === active" :key="banner.id" class="fade-item">
-        <img :src="banner.image" class="fade-img"
+        <img :src="banner.image" :alt="banner.title || '非遗宣传图'" class="fade-img"
              @error="coverFallback($event, banner.title || '非遗之美')" @click="click(banner)" />
-        <!-- 大字标题叠加层：主标题 + 副标题 -->
+        <!-- 左下角标题条：白底 85% 不透明 + 主色竖线 + 重文本标题（docs/11 第 5.1 节） -->
         <div class="fade-overlay">
           <h2 class="fade-main" @click="click(banner)">{{ splitTitle(banner.title).main }}</h2>
           <p class="fade-sub" @click="click(banner)">{{ splitTitle(banner.title).sub }}</p>
         </div>
       </div>
     </transition-group>
-    <!-- 左右切换箭头 -->
-    <button class="fade-arrow left" @click="go((active - 1 + banners.length) % banners.length)">‹</button>
-    <button class="fade-arrow right" @click="go((active + 1) % banners.length)">›</button>
-    <!-- 指示点 -->
+    <!-- 左右切换箭头（纯图标按钮，必须带 aria-label） -->
+    <button class="fade-arrow left" aria-label="上一张 banner" @click="go((active - 1 + banners.length) % banners.length)">‹</button>
+    <button class="fade-arrow right" aria-label="下一张 banner" @click="go((active + 1) % banners.length)">›</button>
+    <!-- 指示器：短横线，激活态主色 -->
     <div class="fade-dots">
-      <span v-for="(banner, index) in banners" :key="banner.id" class="fade-dot"
-            :class="{ active: index === active }" @click="go(index)"></span>
+      <button v-for="(banner, index) in banners" :key="banner.id" class="fade-dot"
+              :class="{ active: index === active }" :aria-label="`切换到第 ${index + 1} 张 banner`"
+              :aria-current="index === active ? 'true' : undefined" @click="go(index)"></button>
     </div>
   </div>
 </template>
@@ -73,8 +83,8 @@ onBeforeUnmount(stopTimer)
 <style scoped>
 .fade-carousel {
   position: relative;
-  height: 380px;
-  border-radius: 12px;
+  height: 420px;
+  border-radius: 4px;
   overflow: hidden;
   background: var(--gq-secondary);
 }
@@ -88,38 +98,38 @@ onBeforeUnmount(stopTimer)
   object-fit: cover;
   cursor: pointer;
 }
-/* 底部渐变遮罩 + 大字标题 */
+/* 左下角标题条：白底 85% 不透明（docs/11 第 5.1 节，不做全宽渐变遮罩） */
 .fade-overlay {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 60px 40px 30px;
-  background: linear-gradient(180deg, transparent, rgba(26, 26, 26, 0.72));
-  color: #fff;
+  left: 24px;
+  bottom: 24px;
+  max-width: 70%;
+  padding: 14px 20px 14px 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border-left: 4px solid var(--gq-primary);
+  color: var(--gq-text);
   pointer-events: none;
 }
 .fade-main {
   font-family: var(--font-heading);
-  font-size: 34px;
+  font-size: 24px;
   font-weight: 700;
-  letter-spacing: 3px;
-  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+  letter-spacing: 1px;
   cursor: pointer;
   pointer-events: auto;
 }
 .fade-sub {
-  margin-top: 8px;
-  font-size: 15px;
+  margin-top: 6px;
+  font-size: 14px;
   letter-spacing: 1px;
-  opacity: 0.88;
+  color: var(--gq-text-secondary);
   cursor: pointer;
   pointer-events: auto;
 }
-/* 淡入淡出动画 */
+/* 切换过渡：轮播自动切换属功能性动效（docs/11 第 2 节允许项） */
 .banner-fade-enter-active,
 .banner-fade-leave-active {
-  transition: opacity 0.9s ease;
+  transition: opacity 0.6s ease;
 }
 .banner-fade-enter-from,
 .banner-fade-leave-to {
@@ -129,7 +139,7 @@ onBeforeUnmount(stopTimer)
   position: absolute;
   inset: 0;
 }
-/* 左右箭头 */
+/* 左右箭头：仅允许 hover 变色 */
 .fade-arrow {
   position: absolute;
   top: 50%;
@@ -137,24 +147,25 @@ onBeforeUnmount(stopTimer)
   width: 40px;
   height: 56px;
   border: none;
-  background: rgba(26, 26, 26, 0.35);
+  background: rgba(51, 51, 51, 0.45);
   color: #fff;
   font-size: 26px;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.25s ease, background 0.25s ease;
+  transition: opacity 0.2s ease;
   z-index: 5;
 }
-.fade-arrow.left { left: 0; border-radius: 0 8px 8px 0; }
-.fade-arrow.right { right: 0; border-radius: 8px 0 0 8px; }
-.fade-carousel:hover .fade-arrow {
+.fade-arrow.left { left: 0; border-radius: 2px 0 0 2px; }
+.fade-arrow.right { right: 0; border-radius: 0 2px 2px 0; }
+.fade-carousel:hover .fade-arrow,
+.fade-arrow:focus-visible {
   opacity: 1;
 }
 .fade-arrow:hover {
-  background: rgba(192, 57, 43, 0.8);
+  background: var(--gq-primary);
 }
-/* 指示点 */
+/* 指示器：短横线 */
 .fade-dots {
   position: absolute;
   right: 24px;
@@ -164,21 +175,22 @@ onBeforeUnmount(stopTimer)
   z-index: 5;
 }
 .fade-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
+  width: 20px;
+  height: 3px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.55);
   cursor: pointer;
-  transition: all 0.25s ease;
 }
 .fade-dot.active {
   background: var(--gq-primary);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
 }
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .fade-carousel { height: 220px; }
-  .fade-main { font-size: 22px; letter-spacing: 1px; }
+  .fade-main { font-size: 18px; letter-spacing: 0; }
   .fade-sub { font-size: 12px; }
-  .fade-overlay { padding: 30px 20px 16px; }
+  .fade-overlay { left: 12px; bottom: 12px; padding: 10px 12px; border-left-width: 3px; max-width: 85%; }
+  .fade-arrow { display: none; }
 }
 </style>

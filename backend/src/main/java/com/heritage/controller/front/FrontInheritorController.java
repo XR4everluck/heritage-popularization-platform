@@ -77,8 +77,7 @@ public class FrontInheritorController {
         vo.put("heritageName", inheritor.getHeritageName());
         vo.put("heritageList", heritages.stream().map(this::toHeritageVO).collect(Collectors.toList()));
         vo.put("videos", listRelatedCourses(heritages));
-        // 代表作品当前无对应数据结构，返回空数组以保证前端 tab 正常渲染
-        vo.put("works", new ArrayList<>());
+        vo.put("works", parseWorks(inheritor.getWorks()));
         return Result.ok(vo);
     }
 
@@ -151,6 +150,8 @@ public class FrontInheritorController {
         vo.put("avatar", inheritor.getAvatar());
         vo.put("introduction", inheritor.getIntroduction());
         vo.put("tags", splitTags(inheritor.getTags()));
+        // 关联项目名称：列表页直接展示，免二次请求
+        vo.put("heritageName", inheritor.getHeritageName());
         vo.put("sort", inheritor.getSort());
         return vo;
     }
@@ -179,5 +180,23 @@ public class FrontInheritorController {
             }
         }
         return result;
+    }
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper OBJECT_MAPPER =
+            new com.fasterxml.jackson.databind.ObjectMapper();
+
+    /**
+     * 代表作品解析：库中以 JSON 数组字符串存储，解析失败时返回空数组保证前端渲染
+     */
+    private List<Map<String, Object>> parseWorks(String worksJson) {
+        if (worksJson == null || worksJson.isBlank()) {
+            return new ArrayList<>();
+        }
+        try {
+            return OBJECT_MAPPER.readValue(worksJson, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+            });
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
 }

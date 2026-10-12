@@ -1,8 +1,9 @@
 <template>
   <div class="inheritor-page">
+    <AppBreadcrumb :items="[{ label: '首页', to: '/' }, { label: '传承人专题' }]" />
     <el-page-header :icon="ArrowLeft" :title="pageTitle" @back="goBack" />
-    
-    <div class="page-header">
+
+    <div class="gq-page-header">
       <h1>传承人专题</h1>
       <p>了解非遗传承人的故事与技艺</p>
     </div>
@@ -11,21 +12,26 @@
       <el-empty v-if="!inheritorList.length" description="暂无传承人信息">
         <el-button type="danger" @click="goBack">返回首页</el-button>
       </el-empty>
-      
+
       <div v-for="inheritor in inheritorList" :key="inheritor.id" class="inheritor-card" @click="goInheritorDetail(inheritor.id)">
         <div class="inheritor-image">
-          <img :src="inheritor.avatar || defaultCover(inheritor.name || '传承人', 200, 200)" :alt="inheritor.name">
+          <img :src="inheritor.avatar || defaultCover(inheritor.name || '传承人', 200, 200)"
+               :alt="`${inheritor.name}肖像，图片用于毕业设计展示`" width="200" height="200">
         </div>
         <div class="inheritor-info">
           <h3 class="inheritor-name">{{ inheritor.name }}</h3>
           <p class="inheritor-title">{{ inheritor.title }}</p>
           <p class="inheritor-bio">{{ inheritor.introduction || '暂无介绍' }}</p>
           <div class="inheritor-tags">
+            <el-tag v-if="inheritor.heritageName" size="small" effect="plain">{{ inheritor.heritageName }}</el-tag>
             <el-tag v-for="tag in inheritor.tags" :key="tag" size="small" effect="dark">{{ tag }}</el-tag>
           </div>
         </div>
       </div>
     </el-card>
+
+    <!-- 版权备注：头像为视觉中国素材（docs/12 版权约束） -->
+    <CopyrightNote />
   </div>
 </template>
 
@@ -35,6 +41,8 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { getInheritorList } from '../../api/front'
 import { defaultCover } from '../../utils/placeholder'
+import AppBreadcrumb from '../../components/AppBreadcrumb.vue'
+import CopyrightNote from '../../components/CopyrightNote.vue'
 
 const router = useRouter()
 const inheritorList = ref([])
@@ -94,18 +102,21 @@ function goInheritorDetail(id) {
   display: flex;
   align-items: center;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 4px;
   margin-bottom: 20px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: none;
   background: #fff;
   border: 1px solid var(--gq-border);
 }
 
+/* 悬停仅变边框色（docs/11 第 2 节禁令：不做位移/阴影增强） */
 .inheritor-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
   border-color: var(--gq-primary);
+}
+
+.inheritor-card:hover .inheritor-name {
+  color: var(--gq-primary-dark);
 }
 
 .inheritor-image {
@@ -142,7 +153,7 @@ function goInheritorDetail(id) {
 
 .inheritor-bio {
   font-size: 14px;
-  color: #909399;
+  color: #999;
   margin-bottom: 15px;
   line-height: 1.5;
 }

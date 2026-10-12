@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <!--
+    内置演示背景：原创几何"回纹格 + 洒金"意象纹样（无第三方版权）
+    用途：在真实视觉中国素材（bg.webp）就位前，演示全站衬底效果
+    真实素材放入 bg/bg.webp 后本文件自动退位（见 composables/useAppBackground.ts 优先级）
+  -->
+  <defs>
+    <pattern id="lattice" width="72" height="72" patternUnits="userSpaceOnUse">
+      <rect width="72" height="72" fill="#f8f8f8"/>
+      <path d="M0 36 L36 0 L72 36 L36 72 Z" fill="none" stroke="#e3ded2" stroke-width="1"/>
+      <circle cx="36" cy="36" r="1.6" fill="#c9bda6"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#lattice)"/>
+  <!-- 洒金点：稀疏暖金点，集中在边角，中心留白便于内容阅读 -->
+  <g fill="#c9bda6">
+    <circle cx="80" cy="70" r="2.4"/><circle cx="180" cy="140" r="1.6"/><circle cx="320" cy="60" r="2"/>
+    <circle cx="1500" cy="90" r="2.2"/><circle cx="1420" cy="180" r="1.5"/><circle cx="1560" cy="260" r="1.8"/>
+    <circle cx="110" cy="820" r="2"/><circle cx="260" cy="860" r="1.5"/><circle cx="1480" cy="800" r="2.4"/>
+    <circle cx="1380" cy="860" r="1.6"/><circle cx="700" cy="40" r="1.4"/><circle cx="900" cy="870" r="1.5"/>
+  </g>
+  <!-- 四角回纹意象：对称折线角饰 -->
+  <g fill="none" stroke="#e0d9c8" stroke-width="2">
+    <path d="M40 40 h60 v24 h-36 v-12 h12"/>
+    <path d="M1560 40 h-60 v24 h36 v-12 h-12"/>
+    <path d="M40 860 h60 v-24 h-36 v12 h12"/>
+    <path d="M1560 860 h-60 v-24 h36 v12 h-12"/>
+  </g>
+</svg>

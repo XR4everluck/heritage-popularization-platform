@@ -135,15 +135,17 @@ async function handleRegister() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #fdf6ec, #fde8e0);
-  border-radius: 8px;
+  /* 透明底：透出全站 #f8f8f8 背景衬底（docs/11：禁渐变、背景统一由 app-bg 提供） */
+  background: transparent;
+  border-radius: 4px;
 }
 .login-card {
   width: 400px;
   background: #fff;
-  border-radius: 12px;
+  border: 1px solid var(--gq-border);
+  border-radius: 4px;
   padding: 32px 36px 40px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-card);
 }
 .card-head {
   text-align: center;

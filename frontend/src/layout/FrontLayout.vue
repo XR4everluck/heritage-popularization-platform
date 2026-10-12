@@ -17,7 +17,17 @@ const activeMenu = computed(() => {
   if (path.startsWith('/inheritor')) return '/inheritor'
   return path
 })
+
 const drawerOpen = ref(false)
+const keyword = ref('')
+
+/** 站内搜索（docs/11 第 5.5 节）：回车/点击后跳转非遗博览页的关键词结果 */
+function goSearch() {
+  const word = keyword.value.trim()
+  if (!word) return
+  router.push({ path: '/heritage', query: { keyword: word } })
+  keyword.value = ''
+}
 
 /** 抽屉菜单跳转并关闭抽屉 */
 function go(path) {
@@ -39,6 +49,7 @@ function go(path) {
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/heritage">非遗博览</el-menu-item>
           <el-menu-item index="/inheritor">传承人专题</el-menu-item>
+          <el-menu-item index="/community">全民科普</el-menu-item>
           <el-menu-item index="/map">非遗地图</el-menu-item>
           <el-menu-item v-if="userStore.isLogin" index="/profile">个人中心</el-menu-item>
         </el-menu>
@@ -52,11 +63,28 @@ function go(path) {
             <div class="drawer-item" :class="{ active: activeMenu === '/' }" @click="go('/')">首页</div>
             <div class="drawer-item" :class="{ active: activeMenu === '/heritage' }" @click="go('/heritage')">非遗博览</div>
             <div class="drawer-item" :class="{ active: activeMenu === '/inheritor' }" @click="go('/inheritor')">传承人专题</div>
+            <div class="drawer-item" :class="{ active: activeMenu === '/community' }" @click="go('/community')">全民科普</div>
             <div class="drawer-item" :class="{ active: activeMenu === '/map' }" @click="go('/map')">非遗地图</div>
             <div v-if="userStore.isLogin" class="drawer-item" :class="{ active: activeMenu === '/profile' }" @click="go('/profile')">个人中心</div>
             <div v-if="userStore.isAdmin" class="drawer-item" @click="go('/admin/dashboard')">进入后台</div>
           </div>
         </el-drawer>
+        <!-- 站内搜索入口（桌面端；回车触发，docs/11 第 5.5 节） -->
+        <el-input
+          v-model="keyword"
+          class="header-search"
+          size="default"
+          placeholder="搜索非遗项目…"
+          clearable
+          aria-label="站内搜索"
+          @keyup.enter="goSearch"
+        >
+          <template #append>
+            <el-button type="primary" aria-label="搜索" @click="goSearch">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </template>
+        </el-input>
         <div class="user-area">
           <template v-if="userStore.isLogin">
             <el-dropdown>
@@ -143,13 +171,13 @@ function go(path) {
 }
 .drawer-item {
   padding: 14px 12px;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 15px;
-  transition: background 0.2s;
+  transition: none;
 }
 .drawer-item:hover {
-  background: #fdf6ec;
+  background: #f5f5f5;
 }
 .drawer-item.active {
   color: var(--gq-primary);
@@ -158,6 +186,9 @@ function go(path) {
 }
 @media (max-width: 768px) {
   .nav-menu {
+    display: none;
+  }
+  .header-search {
     display: none;
   }
   .nav-burger {
@@ -176,6 +207,11 @@ function go(path) {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+/* 顶栏搜索框：窄屏隐藏（改用列表页内搜索） */
+.header-search {
+  width: 200px;
+  margin: 0 16px 0 auto;
 }
 .user-name {
   display: flex;

@@ -43,7 +43,9 @@ const biliEmbed = computed(() => {
 // 播放器下方给出"新窗口打开"兜底入口
 const isExternalPage = computed(() => {
   const url = currentChapter.value?.videoUrl || ''
-  if (!/^https?:\/\//i.test(url) || isBili.value) return false
+  if (!/^https?:\/\//i.test(url)) return false
+  // B站链接但能解析出 BV 号：走官方嵌入播放器，不算外链兜底
+  if (isBili.value && biliEmbed.value) return false
   return !/\.(mp4|webm|ogg|ogv|mov|mkv|mp3|wav|m4a)(\?.*)?$/i.test(url)
 })
 
@@ -281,12 +283,12 @@ async function reportProgress(finished) {
       <!-- 视频播放区 -->
       <el-card shadow="never" class="player-card">
         <template #header><b>正在观看：{{ currentChapter?.title || '暂无内容' }}</b></template>
-        <!-- B站外链视频：使用官方播放器内嵌播放 -->
-        <iframe v-if="currentChapter?.videoUrl && isBili" :key="'bili-' + currentChapter.id"
+        <!-- B站外链视频：解析出 BV 号时使用官方播放器内嵌播放 -->
+        <iframe v-if="currentChapter?.videoUrl && isBili && biliEmbed" :key="'bili-' + currentChapter.id"
                 :src="biliEmbed" scrolling="no" frameborder="0" allowfullscreen
                 class="player bili-player"></iframe>
         <!-- 直链媒体：ArtPlayer 播放器（倍速/画质/全屏/弹幕/进度记忆），进度条上叠加已学章节标记 -->
-        <div v-else-if="currentChapter?.videoUrl" class="art-wrap">
+        <div v-else-if="currentChapter?.videoUrl && !isBili" class="art-wrap">
           <div ref="playerRef" class="player art-container"></div>
           <div class="chapter-marks" v-if="chapters.length > 1">
             <span v-for="(c, i) in chapters" :key="c.id" class="chapter-mark"

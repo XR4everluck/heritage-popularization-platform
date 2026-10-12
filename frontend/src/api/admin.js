@@ -138,3 +138,10 @@ export const dashboardApi = {
   getPopularHeritage: (limit) => request.get('/api/admin/dashboard/popular-heritage', { params: { limit } }),
   getOverview: () => request.get('/api/admin/dashboard/overview')
 }
+
+// ========== 内容审核（用户发布的视频/快讯，docs/17） ==========
+export const submissionApi = {
+  list: (params) => request.get('/api/admin/submission/list', { params }),
+  review: (id, data) => request.post(`/api/admin/submission/${id}/review`, data),
+  offline: (id, note) => request.post(`/api/admin/submission/${id}/offline`, { note })
+}

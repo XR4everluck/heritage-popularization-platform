@@ -42,6 +42,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/inheritor/**",
                         "/api/portal/**",
                         "/api/comment/page",
+                        "/api/submission/approved",
                         "/api/hello/**",
                         "/files/**");
     }

@@ -145,3 +145,17 @@ export function getNewsList(limit = 6) {
 export function getNewsDetail(id) {
   return request.get(`/api/heritage-news/${id}`)
 }
+
+// ========== 用户内容发布（提交后需管理员审核通过才上线，docs/17） ==========
+export function submitContent(data) {
+  return request.post('/api/submission', data)
+}
+
+export function getMySubmissions() {
+  return request.get('/api/submission/my')
+}
+
+// ========== 全民科普（公开接口：仅展示审核通过的用户发布内容，docs/20） ==========
+export function getApprovedSubmissions(params) {
+  return request.get('/api/submission/approved', { params })
+}

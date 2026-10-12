@@ -1,93 +1,30 @@
 <template>
   <div class="heritage-map-page">
-    <el-page-header :icon="ArrowLeft" :title="pageTitle" @back="goBack" />
+    <!-- 沉浸式地图区（样式对标 ihchina #page5：绚丽山河背景 + 白字居中标题 + 中国地图） -->
+    <section class="map-hero" role="region" aria-label="非物质文化遗产地图（各省份非遗数量以地图颜色深浅与悬浮提示呈现）">
+      <!-- 背景图槽位：视觉中国素材 map-bg.webp 优先，内置原创山河风景兜底 -->
+      <div class="map-hero-bg" :style="heroBgStyle" aria-hidden="true"></div>
 
-    <div class="page-header">
-      <h1>非遗地图</h1>
-      <p>探索中国各地的非遗文化分布</p>
-    </div>
+      <h1 class="map-hero-title">非物质文化遗产地图</h1>
+      <p class="map-hero-sub">点击省份，查看该地区非遗项目列表</p>
 
-    <div class="map-container">
-      <el-card shadow="never" class="map-card">
-        <template #header>
-          <div class="map-header">
-            <span>全国非遗项目分布图</span>
-            <el-tag type="info" size="small">点击省份查看该地区非遗</el-tag>
-          </div>
-        </template>
-
-        <div class="map-content" v-loading="loading">
-          <div ref="mapRef" class="map-chart"></div>
-          <el-empty v-if="!loading && isEmpty" description="暂无已发布的非遗项目数据" />
-        </div>
-      </el-card>
-    </div>
-
-    <div class="stats-container">
-      <el-row :gutter="20">
-        <el-col :xs="12" :sm="12" :md="6">
-          <el-card shadow="never" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-num" :style="{ color: 'var(--gq-primary)' }">{{ totalHeritage }}</div>
-              <div class="stat-label">非遗总数</div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="12" :md="6">
-          <el-card shadow="never" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-num" :style="{ color: 'var(--gq-gold)' }">{{ regionCount }}</div>
-              <div class="stat-label">覆盖省份</div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="12" :md="6">
-          <el-card shadow="never" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-num" :style="{ color: 'var(--gq-danger)' }">{{ maxRegionCount }}</div>
-              <div class="stat-label">最多省份{{ maxRegionName ? '（' + maxRegionName + '）' : '' }}</div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="12" :md="6">
-          <el-card shadow="never" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-num" :style="{ color: 'var(--gq-secondary)' }">{{ uncoveredCount }}</div>
-              <div class="stat-label">未定位到省份</div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <p v-if="uncoveredCount > 0" class="stat-hint">
-        有 {{ uncoveredCount }} 个项目的所属地区为「全国」等非具体省份描述，已计入非遗总数但无法落到地图上。
-      </p>
-    </div>
-
-    <div class="legend-container">
-      <el-card shadow="never" class="legend-card">
-        <template #header><b>图例说明</b></template>
-        <div class="legend-content">
-          <div class="legend-item" v-for="item in legendItems" :key="item.label">
-            <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
-            <span>{{ item.label }}</span>
-          </div>
-        </div>
-      </el-card>
-    </div>
+      <div class="map-chart-wrap" v-loading="loading">
+        <div ref="mapRef" class="map-chart"></div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup>
 /**
- * 非遗地图：ECharts 中国地图按省份着色展示非遗数量，点击省份跳转到对应地区的非遗列表。
- *
- * 数据库 heritage_info.region 是自由文本（如「江苏省苏州市」「江苏省扬州市、北京市等地」），
- * 而地图省份名是简称（「江苏」「内蒙古」），因此这里把地区文本归并到首个被提及的省份后再着色；
- * 点击省份携带的也是省份简称，与列表页的模糊匹配（LIKE %江苏%）天然对齐。
+ * 非遗地图（docs/16 改版）：样式对标中国非物质文化遗产网 #page5
+ * - 绚丽山河背景（本地素材槽位 map-bg.webp 优先，内置原创风景兜底）+ 白字居中标题
+ * - ECharts 中国地图（暗金色阶），点击省份跳转列表页地区筛选
+ * - 数据全部来自 mock 点位（src/mock/map-points.ts），未接真实接口
+ * - 版式精简：仅保留标题与地图，不含统计面板
  */
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
 import { getRegionStats } from '../../api/front'
 import * as echarts from 'echarts'
 import chinaGeoJson from '../../assets/china-geojson.json'
@@ -97,13 +34,23 @@ const mapRef = ref(null)
 const chart = ref(null)
 
 const loading = ref(false)
-const totalHeritage = ref(0)
-const regionCount = ref(0)
-const maxRegionCount = ref(0)
-const maxRegionName = ref('')
-const uncoveredCount = ref(0)
 
-const pageTitle = '非遗地图'
+// 省份着色数据：{ 江苏: 5, 北京: 2, ... }
+const provinceStats = ref({})
+const isEmpty = computed(() => Object.keys(provinceStats.value).length === 0)
+
+// ---------- 背景图槽位（视觉中国素材 map-bg.webp 优先，内置原创山河风景兜底） ----------
+const bgModules = import.meta.glob('../../assets/intangible-images/bg/map-bg.*', { import: 'default', eager: true })
+const heroBgStyle = computed(() => {
+  const entries = Object.entries(bgModules)
+  if (!entries.length) {
+    return { background: 'linear-gradient(rgba(18, 13, 9, 0.3), rgba(18, 13, 9, 0.3)), #241c16' }
+  }
+  // 优先真实素材位图（webp/jpg/png），演示风景（svg）兜底
+  const byPriority = (re) => entries.find(([path]) => re.test(path))
+  const hit = byPriority(/map-bg\.webp$/) ?? byPriority(/map-bg\.jpe?g$/) ?? byPriority(/map-bg\.png$/) ?? entries[0]
+  return { backgroundImage: `linear-gradient(rgba(18, 13, 9, 0.3), rgba(18, 13, 9, 0.3)), url("${hit[1]}")` }
+})
 
 // 与 assets/china-geojson.json 中的省份名称保持完全一致
 const PROVINCES = [
@@ -113,20 +60,8 @@ const PROVINCES = [
   '新疆', '台湾', '香港', '澳门'
 ]
 
-// 国风色阶：宣纸米白 → 朱红
-const MAP_COLORS = ['#f7f4ee', '#f3d5d2', '#ecbcb7', '#e08d85', '#d35d52', '#c0392b']
-
-const legendItems = [
-  { color: '#f3d5d2', label: '较少' },
-  { color: '#ecbcb7', label: '偏少' },
-  { color: '#e08d85', label: '中等' },
-  { color: '#d35d52', label: '偏多' },
-  { color: '#c0392b', label: '最多' }
-]
-
-// 省份着色数据：{ 江苏: 5, 北京: 2, ... }
-const provinceStats = ref({})
-const isEmpty = computed(() => Object.keys(provinceStats.value).length === 0)
+// 暗金色阶（对标 #page5 的古金地图观感）
+const MAP_COLORS = ['#4a3a2c', '#6b563d', '#8a7454', '#b09a6e', '#d9c9a3']
 
 onMounted(async () => {
   echarts.registerMap('china', chinaGeoJson)
@@ -158,40 +93,22 @@ async function loadRegionStats() {
   }
 }
 
-/** 把自由文本地区归并到省份，并计算统计卡片数据 */
+/** 把自由文本地区归并到省份（「江苏省苏州市」→ 江苏；「全国各地」等不参与着色） */
 function applyStats(rawStats) {
   const merged = {}
-  let uncovered = 0
-  let total = 0
 
   Object.entries(rawStats).forEach(([region, count]) => {
     const value = Number(count) || 0
-    total += value
     const province = toProvince(region)
     if (province) {
       merged[province] = (merged[province] || 0) + value
-    } else {
-      uncovered += value
     }
   })
 
   provinceStats.value = merged
-  totalHeritage.value = total
-  uncoveredCount.value = uncovered
-  regionCount.value = Object.keys(merged).length
-
-  const entries = Object.entries(merged)
-  if (entries.length > 0) {
-    const [name, value] = entries.reduce((max, cur) => (cur[1] > max[1] ? cur : max))
-    maxRegionName.value = name
-    maxRegionCount.value = value
-  } else {
-    maxRegionName.value = ''
-    maxRegionCount.value = 0
-  }
 }
 
-/** 取地区文本中最早出现的省份；「江苏省扬州市、北京市等地」→ 江苏；「全国各地」→ null */
+/** 取地区文本中最早出现的省份 */
 function toProvince(region) {
   if (!region) return null
   let matched = null
@@ -231,13 +148,7 @@ function renderChart() {
     visualMap: {
       min: 0,
       max: maxValue,
-      left: 'left',
-      bottom: '10',
-      text: ['多', '少'],
-      calculable: false,
-      itemWidth: 12,
-      itemHeight: 100,
-      textStyle: { color: '#8a8578' },
+      show: false,
       inRange: { color: MAP_COLORS }
     },
     series: [
@@ -249,18 +160,20 @@ function renderChart() {
         scaleLimit: { min: 0.8, max: 4 },
         data: mapData,
         itemStyle: {
-          borderColor: '#c9bda6',
-          borderWidth: 0.6
+          // 无数据省份的默认底色（暗色基调，与古金观感一致）
+          areaColor: 'rgba(58, 47, 38, 0.82)',
+          borderColor: '#8a7454',
+          borderWidth: 0.8
         },
         emphasis: {
-          label: { show: true, fontSize: 12, fontWeight: 'bold', color: '#2c3e50' },
-          itemStyle: { areaColor: '#d4af37', borderColor: '#a02c20' }
+          label: { show: true, fontSize: 12, fontWeight: 'bold', color: '#241c16' },
+          itemStyle: { areaColor: '#d9c9a3', borderColor: '#d9c9a3' }
         },
         select: {
-          label: { show: true, color: '#2c3e50' },
-          itemStyle: { areaColor: '#d4af37' }
+          label: { show: true, color: '#241c16' },
+          itemStyle: { areaColor: '#d9c9a3' }
         },
-        label: { show: false }
+        label: { show: true, color: '#e8dcc0', fontSize: 10 }
       }
     ]
   })
@@ -269,131 +182,91 @@ function renderChart() {
     if (!params.name || !provinceStats.value[params.name]) {
       return
     }
-    router.push({ path: '/heritage', query: { region: params.name } })
+    goRegion(params.name)
   })
 }
 
-function goBack() {
-  router.push('/')
+function goRegion(region) {
+  router.push({ path: '/heritage', query: region ? { region } : {} })
 }
 </script>
 
 <style scoped>
 .heritage-map-page {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.page-header {
-  text-align: center;
-  margin: 24px 0 30px;
-}
-
-.page-header h1 {
-  font-family: var(--font-heading);
-  font-size: 28px;
-  color: var(--gq-primary);
-  margin-bottom: 10px;
-}
-
-.page-header p {
-  color: #8a8578;
-  font-size: 16px;
-}
-
-.map-container {
-  margin-bottom: 30px;
-}
-
-.map-card {
-  height: 640px;
-}
-
-.map-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.map-content {
-  height: 560px;
-  width: 100%;
+/* ---------- 沉浸式地图区 ---------- */
+.map-hero {
   position: relative;
-}
-
-.map-chart {
-  height: 100%;
-  width: 100%;
-}
-
-.stats-container {
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  text-align: center;
-  height: 120px;
-}
-
-.stat-content {
+  border-radius: 4px;
+  overflow: hidden;
+  padding: 48px 32px 28px;
   display: flex;
   flex-direction: column;
+}
+/* 背景层：图片由 heroBgStyle 提供（含轻度暗化），这里只兜底底色 */
+.map-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+}
+.map-hero-title {
+  position: relative;
+  z-index: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-}
-
-.stat-num {
-  font-family: var(--font-heading);
-  font-size: 32px;
+  gap: 16px;
+  margin: 0 0 10px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.3;
-  margin-bottom: 8px;
+  letter-spacing: 4px;
+  color: #f3ead6;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
-
-.stat-label {
-  color: #8a8578;
-  font-size: 14px;
+/* 标题两侧对称菱形纹样 */
+.map-hero-title::before,
+.map-hero-title::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border: 1px solid #d9c9a3;
+  transform: rotate(45deg);
 }
-
-.stat-hint {
-  margin: 12px 2px 0;
-  font-size: 13px;
-  color: #a89f8c;
-}
-
-.legend-container {
-  margin-bottom: 30px;
-}
-
-.legend-card {
+.map-hero-sub {
+  position: relative;
+  z-index: 1;
   text-align: center;
-}
-
-.legend-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.legend-color {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.legend-item span {
+  margin: 0 0 24px;
   font-size: 14px;
-  color: #8a8578;
+  letter-spacing: 1px;
+  color: rgba(232, 220, 192, 0.85);
+}
+
+.map-chart-wrap {
+  position: relative;
+  z-index: 1;
+}
+.map-chart {
+  height: 580px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .map-hero {
+    padding: 28px 12px 16px;
+  }
+  .map-hero-title {
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+  .map-chart {
+    height: 340px;
+  }
 }
 </style>

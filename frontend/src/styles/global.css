@@ -1,52 +1,76 @@
 /* ============================================================
-   非遗知识科普平台 —— 全局国风主题样式
+   非遗知识科普平台 —— 全局主题样式
    ============================================================
+   规范依据：docs/11 全局设计规范（阶段二审定稿）
    主题约定：
-   - 所有颜色均通过下方 CSS 变量引用，修改 :root 中变量即可全站生效；
-   - Element Plus 组件主色通过 --el-color-* 变量映射到主题色板；
-   - 正文使用思源宋体（回退 宋体），标题使用思源黑体加粗（回退 微软雅黑）；
-   - 页面背景为宣纸米白 + 细微纸张纹理，卡片为纯白。
+   - 所有颜色均通过 CSS 变量引用，修改 :root 即全站生效；
+   - 主色 #9E2021 仅用于标题强调/主按钮/导航激活态，不做页面背景；
+   - 字体混排栈：英文数字命中 Times New Roman，中文回退思源黑体；
+   - 页面背景纯 #f8f8f8（无纹理），卡片纯白，阴影全站仅一档；
+   - Element Plus 组件通过 --el-* 变量映射主题；全局关闭过渡动画。
    ============================================================ */
 
 :root {
-  /* ---------- 国风色板 ---------- */
-  --gq-primary: #c0392b;        /* 主色：朱红 */
-  --gq-primary-dark: #a02c20;   /* 主色深（hover/active） */
-  --gq-primary-light-3: #d35d52; /* 主色浅 30% */
-  --gq-primary-light-5: #e08d85; /* 主色浅 50% */
-  --gq-primary-light-7: #ecbcb7; /* 主色浅 70% */
-  --gq-primary-light-8: #f3d5d2; /* 主色浅 80% */
-  --gq-primary-light-9: #f9ebe9; /* 主色浅 90%（浅底） */
-  --gq-secondary: #2c3e50;      /* 辅助色：黛青 */
-  --gq-gold: #d4af37;           /* 点缀色：鎏金 */
-  --gq-bg: #f7f4ee;             /* 页面背景：宣纸米白 */
-  --gq-text: #1a1a1a;           /* 主文字：墨黑 */
-  --gq-text-secondary: #666666; /* 次文字：深灰 */
-  --gq-border: #e8e3d9;         /* 边框：浅暖灰 */
-  --gq-card: #ffffff;           /* 卡片背景：纯白 */
+  /* ---------- 国风色板（docs/11 第 1.1 节） ---------- */
+  --gq-primary: #9e2021;        /* 主色：只做标题强调、主按钮、导航激活态 */
+  --gq-primary-dark: #7e1a1a;   /* 主色深（hover/active） */
+  --gq-primary-light-3: #bb6364; /* 主色浅 30% */
+  --gq-primary-light-5: #ce8f90; /* 主色浅 50% */
+  --gq-primary-light-7: #eabcbd; /* 主色浅 70% */
+  --gq-primary-light-8: #f3d2d3; /* 主色浅 80% */
+  --gq-primary-light-9: #f5e8e9; /* 主色浅 90%（浅底） */
+  --gq-secondary: #333333;      /* 辅助色：重文本/深色区底 */
+  --gq-gold: #999999;           /* （已废弃）旧鎏金令牌，仅为兼容存量模板保留，映射为说明灰 */
+  --gq-bg: #f8f8f8;             /* 页面背景：纯浅灰，无纹理 */
+  --gq-text: #333333;           /* 重文本：标题/导航/表头 */
+  --gq-text-secondary: #666666; /* 正文 */
+  --gq-text-muted: #999999;     /* 禁用/说明小字 */
+  --gq-border: #e5e5e5;         /* 边框 */
+  --gq-divider: #eeeeee;        /* 区块分割细横线 */
+  --gq-card: #ffffff;           /* 卡片背景：纯白，禁止渐变 */
 
-  /* ---------- 字体 ---------- */
-  --font-body: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', '宋体', serif;
-  --font-heading: 'Noto Sans SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', '微软雅黑', sans-serif;
+  /* ---------- 字体（docs/11 第 1.2 节） ---------- */
+  /* 混排栈：英文/数字命中 Times New Roman，中文回退思源黑体 */
+  --font-body: 'Times New Roman', 'Source Han Sans SC', 'SimHei', sans-serif;
+  --font-heading: 'Times New Roman', 'Source Han Sans SC', 'SimHei', sans-serif;
+  --font-en: 'Times New Roman', serif;
+
+  /* ---------- 阴影：全站唯一档（docs/11 第 1.1 节） ---------- */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
 
   /* ---------- Element Plus 主题映射（一处修改，全站生效） ---------- */
   --el-color-primary: var(--gq-primary);
   --el-color-primary-dark-2: var(--gq-primary-dark);
   --el-color-primary-light-3: var(--gq-primary-light-3);
   --el-color-primary-light-5: var(--gq-primary-light-5);
-  --el-color-primary-light-7: #ecbcb7;
+  --el-color-primary-light-7: var(--gq-primary-light-7);
   --el-color-primary-light-8: var(--gq-primary-light-8);
   --el-color-primary-light-9: var(--gq-primary-light-9);
+  /* 存量页面普遍使用 type="danger" 承担"主操作按钮"角色，统一映射到主色系，
+     使全站主按钮视觉符合"主色 #9E2021"约定（docs/11 第 1.1 节） */
+  --el-color-danger: var(--gq-primary);
+  --el-color-danger-dark-2: var(--gq-primary-dark);
+  --el-color-danger-light-3: var(--gq-primary-light-3);
+  --el-color-danger-light-5: var(--gq-primary-light-5);
+  --el-color-danger-light-7: var(--gq-primary-light-7);
+  --el-color-danger-light-8: var(--gq-primary-light-8);
+  --el-color-danger-light-9: var(--gq-primary-light-9);
   --el-bg-color-page: var(--gq-bg);
-  --el-fill-color-light: #faf8f3;
-  --el-fill-color-lighter: #fbfaf7;
+  --el-fill-color-light: #f5f5f5;
+  --el-fill-color-lighter: #fafafa;
   --el-text-color-primary: var(--gq-text);
   --el-text-color-regular: var(--gq-text-secondary);
-  --el-text-color-secondary: #8a8578;
+  --el-text-color-secondary: var(--gq-text-muted);
+  --el-text-color-placeholder: var(--gq-text-muted);
   --el-border-color: var(--gq-border);
   --el-border-color-light: var(--gq-border);
-  --el-border-color-lighter: #efeae0;
+  --el-border-color-lighter: var(--gq-divider);
   --el-font-family: var(--font-body);
+  --el-box-shadow-light: var(--shadow-card);
+
+  /* ---------- 全局关闭 Element Plus 过渡/动画（docs/11 第 2 节禁令） ---------- */
+  --el-transition-duration: 0s;
+  --el-animation-duration: 0s;
 }
 
 /* ============================================================
@@ -66,10 +90,79 @@ body,
   color: var(--gq-text);
 }
 
-/* 宣纸米白页面底色 + 细微纸张纹理（feTurbulence 噪点，极低透明度） */
+/* 页面底色：纯 #f8f8f8（docs/11：去纹理，简洁庄重） */
 body {
   background-color: var(--gq-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   全站背景衬底层（docs/14 方案，对标 ihchina 内页"纸纹衬底 + 白卡浮层"）
+   - 素材经 useAppBackground 写入 --app-bg-image（仅本地资源，未就位时退回纯色底）
+   - 透明度 ≤ 8%：保证 #666 正文对背景对比度仍 ≥ 4.5:1（无障碍要求）
+   - fixed 定位不随滚动，无任何动画（符合 docs/11 动效禁令）
+   ============================================================ */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--gq-bg);
+  background-image: var(--app-bg-image, none);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.08;
+}
+
+@media (max-width: 768px) {
+  /* 小屏进一步降低衬底存在感，优先保证正文可读性 */
+  .app-bg {
+    opacity: 0.05;
+  }
+}
+
+/* ============================================================
+   页头横幅范式（docs/14，对标 ihchina 内页"居中大标题 + 对称纹样装饰"）
+   用法：<div class="gq-page-header"><h1>页面标题</h1><p>副题说明</p></div>
+   ============================================================ */
+.gq-page-header {
+  text-align: center;
+  margin: 8px 0 32px;
+}
+.gq-page-header h1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gq-text);
+  letter-spacing: 2px;
+}
+/* 标题两侧对称纹样：主色描边小菱形（纯 CSS，小面积主色点缀，对标 ihchina 对称纹样） */
+.gq-page-header h1::before,
+.gq-page-header h1::after {
+  content: '';
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--gq-primary);
+  transform: rotate(45deg);
+  opacity: 0.55;
+}
+.gq-page-header p {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--gq-text-muted);
+  letter-spacing: 1px;
+}
+/* 页头之下细分隔线，衔接内容区 */
+.gq-page-header::after {
+  content: '';
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: 1px;
+  margin: 24px auto 0;
+  background: linear-gradient(to right, transparent, var(--gq-divider) 15%, var(--gq-divider) 85%, transparent);
 }
 
 a {
@@ -77,38 +170,87 @@ a {
   color: inherit;
 }
 
-/* 标题统一：思源黑体加粗 */
+/* 标题统一：黑体栈 + 重文本色 */
 h1, h2, h3, h4, h5 {
   font-family: var(--font-heading);
   font-weight: 700;
   color: var(--gq-text);
 }
 
+/* 键盘聚焦可见描边（docs/11 第 6.4 节无障碍要求） */
+:focus-visible {
+  outline: 2px solid var(--gq-primary);
+  outline-offset: 2px;
+}
+
 /* 富文本内容展示（非遗详情/公告内容） */
 .rich-content p {
-  line-height: 1.8;
+  line-height: 1.75;
   margin: 8px 0;
+  color: var(--gq-text-secondary);
+  font-size: 16px;
 }
 
 .rich-content img {
   max-width: 100%;
+  border-radius: 2px;
+}
+
+/* 区块分割细横线（docs/11：只用细横线分割，不用色块） */
+.gq-divider {
+  border: none;
+  border-top: 1px solid var(--gq-divider);
+  margin: 32px 0;
+}
+
+/* 区块标题统一范式：22px 重文本 + 主色短下划线 */
+.gq-section-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gq-text);
+  padding-bottom: 8px;
+  position: relative;
+}
+.gq-section-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 32px;
+  height: 3px;
+  background: var(--gq-primary);
+}
+
+/* 版权备注（毕设合规：素材来源声明，12px #999 居中，与上方内容留 16px） */
+.gq-copyright-note {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--gq-text-muted);
 }
 
 /* ============================================================
    Element Plus 组件主题微调（不改结构，仅样式）
    ============================================================ */
 
-/* 卡片：纯白背景 + 暖色细边框 + 极淡纸张纹理 */
+/* 卡片：纯白 + 细边框 + 唯一档阴影，关闭悬浮动效 */
 .el-card {
   background-color: var(--gq-card);
   border-color: var(--gq-border);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  border-radius: 4px;
+  box-shadow: var(--shadow-card);
+  transition: none;
+}
+.el-card.is-hover-shadow:hover,
+.el-card[shadow="hover"]:hover {
+  box-shadow: var(--shadow-card);
 }
 
 /* 弹窗 / 消息框：白底 + 墨黑标题 */
 .el-dialog,
 .el-message-box {
   background-color: var(--gq-card);
+  border-radius: 8px;
 }
 .el-dialog__title,
 .el-message-box__title {
@@ -117,7 +259,7 @@ h1, h2, h3, h4, h5 {
   font-weight: 700;
 }
 
-/* 顶部导航菜单：选中态朱红加粗 */
+/* 顶部导航菜单：选中态主色加粗 */
 .el-menu--horizontal .el-menu-item.is-active {
   color: var(--gq-primary) !important;
   font-weight: 700;
@@ -128,7 +270,7 @@ h1, h2, h3, h4, h5 {
   background-color: var(--gq-primary);
 }
 
-/* 标签（el-tag）浅色底更贴宣纸风格 */
+/* 标签（el-tag）细边框弱化视觉 */
 .el-tag--light {
   border-color: var(--gq-border);
 }
@@ -144,10 +286,50 @@ h1, h2, h3, h4, h5 {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55), 0 1px 4px rgba(192, 57, 43, 0.35);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
 }
 
-/* 鎏金点缀：分隔线 hover 等场景可用 */
+/* （已废弃）旧鎏金点缀类：仅为兼容存量模板保留，现为说明灰 */
 .gq-gold {
   color: var(--gq-gold);
+}
+
+/* ============================================================
+   图集组件配套（docs/11 第 2、4.1 节）
+   ============================================================ */
+
+/* v-lazy 懒加载状态（src/directives/lazy.ts）：占位/失败底色 */
+img.is-lazy-pending,
+img.is-lazy-error {
+  background-color: #f0f0f0;
+}
+
+/* 关闭 Element Plus 图片查看器过渡动画（全局动画禁令的补充项） */
+.viewer-fade-enter-active,
+.viewer-fade-leave-active {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 关闭 Element Plus 内置过渡类动画（docs/11 第 2 节禁令兜底） */
+.el-fade-in-enter-active,
+.el-fade-in-leave-active,
+.el-fade-in-linear-enter-active,
+.el-fade-in-linear-leave-active,
+.el-zoom-in-center-enter-active,
+.el-zoom-in-center-leave-active,
+.el-zoom-in-top-enter-active,
+.el-zoom-in-top-leave-active {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 动效偏好：用户系统设置减弱动效时，轮播等功能动效一并停止（docs/11 第 2 节） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
 }

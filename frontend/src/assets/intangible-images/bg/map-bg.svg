@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <!--
+    地图页背景：原创"绚丽山河·金辉万里"风景（无第三方版权）
+    构图：暮金天空 + 落日 + 云海 + 层叠群山 + 金色江带；整体压暗保证标题与地图可读
+    真实素材（视觉中国 map-bg.webp）放入后自动替换本文件
+  -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#151226"/>
+      <stop offset="0.45" stop-color="#3a2334"/>
+      <stop offset="0.72" stop-color="#8a4a2e"/>
+      <stop offset="1" stop-color="#c98a3e"/>
+    </linearGradient>
+    <linearGradient id="river" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d9a94e"/>
+      <stop offset="0.5" stop-color="#b5823a"/>
+      <stop offset="1" stop-color="#8a5f2e"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.62" cy="0.42" r="0.5">
+      <stop offset="0" stop-color="#ffd98a" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#f0a24a" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#f0a24a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 天空与落日 -->
+  <rect width="1920" height="620" fill="url(#sky)"/>
+  <circle cx="1190" cy="450" r="290" fill="url(#sunGlow)"/>
+  <circle cx="1190" cy="452" r="86" fill="#ffdf9e"/>
+  <circle cx="1190" cy="452" r="86" fill="none" stroke="#ffe9bd" stroke-width="2" opacity="0.6"/>
+
+  <!-- 飞鸟群 -->
+  <g stroke="#1a1420" stroke-width="3" fill="none" opacity="0.75" stroke-linecap="round">
+    <path d="M980 300 q14 -12 28 0 M1008 300 q14 -12 28 0"/>
+    <path d="M1050 336 q11 -10 22 0 M1072 336 q11 -10 22 0"/>
+    <path d="M928 356 q10 -8 20 0 M948 356 q10 -8 20 0"/>
+  </g>
+
+  <!-- 远山云海（两层剪影） -->
+  <g fill="#5a3050">
+    <path d="M0 520 Q160 462 340 500 T700 488 Q900 452 1120 502 T1520 490 Q1720 460 1920 505 L1920 640 L0 640 Z" opacity="0.85"/>
+  </g>
+  <g fill="#3d2338">
+    <path d="M0 570 Q220 522 430 556 T880 545 Q1130 508 1380 560 T1920 548 L1920 700 L0 700 Z"/>
+  </g>
+
+  <!-- 中景金色江带（蜿蜒河流，倒映落日） -->
+  <path d="M0 700 Q420 668 760 700 T1450 690 Q1700 686 1920 706 L1920 780 L0 780 Z" fill="url(#river)"/>
+  <g stroke="#ffe0a0" stroke-width="3" opacity="0.7" stroke-linecap="round">
+    <path d="M1040 712 q90 -6 190 -2"/>
+    <path d="M240 730 q70 -5 150 -2"/>
+    <path d="M1560 726 q110 -5 220 -1"/>
+  </g>
+
+  <!-- 近景群山（两层，山脊线 + 金边轮廓） -->
+  <g>
+    <path d="M0 760 L300 620 L520 742 L760 600 L1010 748 L1240 636 L1500 752 L1720 656 L1920 744 L1920 1080 L0 1080 Z" fill="#241a14"/>
+    <path d="M0 760 L300 620 L520 742 L760 600 L1010 748 L1240 636 L1500 752 L1720 656 L1920 744" fill="none" stroke="#d9a94e" stroke-width="2.5" opacity="0.55"/>
+  </g>
+  <g>
+    <path d="M0 900 L260 780 L480 890 L740 764 L1000 896 L1290 772 L1560 900 L1780 800 L1920 880 L1920 1080 L0 1080 Z" fill="#181008"/>
+    <path d="M0 900 L260 780 L480 890 L740 764 L1000 896 L1290 772 L1560 900 L1780 800 L1920 880" fill="none" stroke="#b5823a" stroke-width="2" opacity="0.4"/>
+  </g>
+
+  <!-- 星点（高空缀星） -->
+  <g fill="#ffe9bd">
+    <circle cx="180" cy="90" r="2.2"/><circle cx="420" cy="150" r="1.6"/><circle cx="700" cy="70" r="1.8"/>
+    <circle cx="1420" cy="110" r="2"/><circle cx="1660" cy="60" r="1.5"/><circle cx="1830" cy="170" r="1.8"/>
+    <circle cx="90" cy="230" r="1.5"/><circle cx="1580" cy="250" r="1.4"/>
+  </g>
+
+  <!-- 全幅暗角：保证标题/地图可读 -->
+  <radialGradient id="vig" cx="0.5" cy="0.45" r="0.85">
+    <stop offset="0" stop-color="#000000" stop-opacity="0.38"/>
+    <stop offset="1" stop-color="#000000" stop-opacity="0.55"/>
+  </radialGradient>
+  <rect width="1920" height="1080" fill="url(#vig)"/>
+</svg>
